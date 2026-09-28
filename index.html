@@ -215,6 +215,10 @@ input,select{width:100%;box-sizing:border-box;margin-top:4px;padding:10px;font-s
 
 <div class="c"><h2>Tüm Gün Sonu Kayıtları</h2>
 <div class="n" style="margin:0 0 10px">Tarihe dokunarak o günkü kayıtları aç/kapat. Paket/km rakamlarını değiştirip "Güncelle"ye bas, silmek için Sil'e iki kez bas.</div>
+<div class="regiontabs">
+ <button class="regiontab on" id="en-rt-izmir" onclick="setEntriesRegion('izmir')">İzmir</button>
+ <button class="regiontab" id="en-rt-aydin" onclick="setEntriesRegion('aydin')">Aydın</button>
+</div>
 <div id="entriesList" class="reclist"></div>
 <div style="height:10px"></div>
 <button class="btn p" style="width:100%" onclick="exportEntriesExcel()">Tüm Kayıtları Excel İndir</button>
@@ -413,11 +417,23 @@ let S={biz:[],entries:[]};
 let channels=[];
 let bizRegion='izmir';
 let resRegion='izmir';
+let resDates={izmir:{from:null,to:null},aydin:{from:null,to:null}};
 function setResRegion(r){
+ resDates[resRegion]={from:$('resDateFrom').value,to:$('resDateTo').value};
  resRegion=r;
  $('res-rt-izmir').classList.toggle('on',r==='izmir');
  $('res-rt-aydin').classList.toggle('on',r==='aydin');
+ const saved=resDates[r];
+ $('resDateFrom').value=saved.from||td();
+ $('resDateTo').value=saved.to||td();
  renderRes();
+}
+let entriesRegion='izmir';
+function setEntriesRegion(r){
+ entriesRegion=r;
+ $('en-rt-izmir').classList.toggle('on',r==='izmir');
+ $('en-rt-aydin').classList.toggle('on',r==='aydin');
+ renderEntriesList();
 }
 const writeQ=new Map();
 function queueWrite(key,fn){
@@ -433,6 +449,7 @@ function teardownRealtime(){ channels.forEach(c=>sb.removeChannel(c)); channels=
 
 async function initData(){
  $('dt').value=td();
+ resDates={izmir:{from:td(),to:td()},aydin:{from:td(),to:td()}};
  $('resDateFrom').value=td(); $('resDateTo').value=td();
  $('dbStat').textContent='Yükleniyor…';$('dbStat').classList.remove('err','ok');
  try{
@@ -579,15 +596,24 @@ function submitEntry(){
   if(i>=0) S.entries[i]=data; else S.entries.push(data);
   renderRes();
   $('enPk').value=''; $('enKm').value=''; $('enBiz').value='';
+  const addedBiz=S.biz.find(x=>x.id===bizId);
+  entriesRegion=(addedBiz&&addedBiz.region==='aydin')?'aydin':'izmir';
+  $('en-rt-izmir').classList.toggle('on',entriesRegion==='izmir');
+  $('en-rt-aydin').classList.toggle('on',entriesRegion==='aydin');
   renderEntriesList(date);
  });
 }
 const fmtDate=s=>{ if(!s) return ''; const p=s.split('-'); return p.length===3?(p[2]+'.'+p[1]+'.'+p[0]):s; };
 function renderEntriesList(focusDate){
  const groups=new Map();
- S.entries.forEach(e=>{ if(!groups.has(e.entry_date)) groups.set(e.entry_date,[]); groups.get(e.entry_date).push(e); });
+ S.entries.forEach(e=>{
+  const b=S.biz.find(x=>x.id===e.business_id);
+  if(!b||(b.region||'izmir')!==entriesRegion) return;
+  if(!groups.has(e.entry_date)) groups.set(e.entry_date,[]);
+  groups.get(e.entry_date).push(e);
+ });
  const dates=[...groups.keys()].sort((a,b)=>a<b?1:(a>b?-1:0));
- if(!dates.length){ $('entriesList').innerHTML='<div class="n" style="margin:10px">Henüz kayıt yok.</div>'; return; }
+ if(!dates.length){ $('entriesList').innerHTML='<div class="n" style="margin:10px">Bu bölgede kayıt yok.</div>'; return; }
  $('entriesList').innerHTML=dates.map(d=>{
   const items=groups.get(d).slice().sort((a,b)=>{
    const ba=S.biz.find(x=>x.id===a.business_id),bb=S.biz.find(x=>x.id===b.business_id);
@@ -642,8 +668,8 @@ $('entriesList').addEventListener('click',e=>{
   return;
  }
 });
-$('resDateFrom').addEventListener('change',renderRes);
-$('resDateTo').addEventListener('change',renderRes);
+$('resDateFrom').addEventListener('change',()=>{ resDates[resRegion].from=$('resDateFrom').value; renderRes(); });
+$('resDateTo').addEventListener('change',()=>{ resDates[resRegion].to=$('resDateTo').value; renderRes(); });
 
 function saveSettings(){
  queueWrite('settings',()=>sb.from('settings').upsert({pay:n2($('pay').value),base:$('base').value},{onConflict:'user_id'}));
