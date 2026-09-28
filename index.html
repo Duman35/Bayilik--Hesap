@@ -91,6 +91,7 @@ input,select{width:100%;box-sizing:border-box;margin-top:4px;padding:10px;font-s
 .entryrow:last-child{border-bottom:0}
 .entrytop{display:flex;justify-content:space-between;gap:8px;align-items:center}
 .badge{font-size:11px;padding:2px 6px;border-radius:999px;background:var(--bg);border:1px solid var(--bd);color:var(--mu)}
+.inlineSel{width:auto;display:inline-block;margin:0 2px;padding:2px 6px;font-size:13px;font-weight:600;border-radius:6px;border:1px solid var(--ac);color:var(--ac);background:var(--card)}
 </style></head><body>
 
 <div id="loginScreen" class="loginwrap">
@@ -163,12 +164,6 @@ input,select{width:100%;box-sizing:border-box;margin-top:4px;padding:10px;font-s
 <div class="regiontabs">
  <button class="regiontab on" id="res-rt-izmir" onclick="setResRegion('izmir')">İzmir</button>
  <button class="regiontab" id="res-rt-aydin" onclick="setResRegion('aydin')">Aydın</button>
-</div>
-<label>Vigo payı</label>
-<div class="regiontabs" id="payBtns">
- <button class="regiontab" data-v="5" onclick="setPayPct(5)">%5</button>
- <button class="regiontab" data-v="6" onclick="setPayPct(6)">%6</button>
- <button class="regiontab" data-v="7" onclick="setPayPct(7)">%7</button>
 </div>
 <div class="g">
 <label>Başlangıç<input id="resDateFrom" type="date"></label>
@@ -414,16 +409,13 @@ function calc(){
  if(activeTab===2) renderRes();
 }
 calcIds.forEach(i=>{$(i).addEventListener('input',calc);$(i).addEventListener('change',calc)});
-function syncPayBtns(){
- const v=$('pay').value;
- document.querySelectorAll('#payBtns button').forEach(b=>b.classList.toggle('on',b.dataset.v===v));
-}
 function setPayPct(v){
  $('pay').value=String(v);
- calc(); saveSettings(); syncPayBtns();
+ calc(); saveSettings();
+ if(activeTab===2) renderRes();
 }
-$('pay').addEventListener('change',()=>{ calc(); saveSettings(); syncPayBtns(); });
-$('base').addEventListener('change',()=>{ calc(); saveSettings(); });
+$('pay').addEventListener('change',()=>{ calc(); saveSettings(); if(activeTab===2) renderRes(); });
+$('base').addEventListener('change',()=>{ calc(); saveSettings(); if(activeTab===2) renderRes(); });
 
 let activeTab=1;
 function showTab(n){
@@ -489,7 +481,6 @@ async function initData(){
   else{ await sb.from('settings').insert({pay:5,base:'h'}); }
   calc();
   renderRes();
-  syncPayBtns();
   updateEnBizOptions();
   $('dbStat').textContent='Bağlandı — veriler Supabase\'te kayıtlı, tüm cihazlarda senkron.';
   $('dbStat').classList.add('ok');
@@ -522,7 +513,7 @@ function setupRealtime(){
   refreshEntriesUI(); renderRes();
  }).subscribe();
  const ch3=sb.channel('settings-'+uid).on('postgres_changes',{event:'*',schema:'public',table:'settings',filter:'user_id=eq.'+uid},payload=>{
-  if(payload.new){ $('pay').value=payload.new.pay; $('base').value=payload.new.base; calc(); syncPayBtns(); }
+  if(payload.new){ $('pay').value=payload.new.pay; $('base').value=payload.new.base; calc(); if(activeTab===2) renderRes(); }
  }).subscribe();
  channels=[ch1,ch2,ch3];
 }
@@ -788,8 +779,13 @@ function renderRes(){
  out+=`<tr class="tt"><td>Toplam</td><td>${T.pk}</td><td>${T.km}</td><td>${f(T.g)}</td><td>${f(T.b)}</td><td>${f(T.v)}</td><td style="color:var(--gr)">${f(T.z)}</td></tr>`;
  $('rs').innerHTML=out;
  const R=(a,b,st)=>`<div class="r" style="grid-template-columns:2fr 1fr;${st||''}"><span>${a}</span><span>${b}</span></div>`;
- $('sm').innerHTML=R('İşletmelere kesilecek fatura (KDV dahil)',f(T.g*1.2))+R('Hasılat (KDV hariç)',f(T.g))+R('Kuryeye ödenecek (KDV dahil)',f(T.k))+R('Cost / Maliyet (KDV hariç)',f(T.c))+R('Brüt kâr',f(T.b),'font-weight:700')+R('Brüt kâr %',pc(T.g?T.b/T.g*100:0))+R('Vigo payı (%'+p+', '+(base=='b'?'brüt kâr':'hasılat')+')',f(T.v))+R('Bayi (sana kalan)',f(T.z),'font-weight:700;color:var(--gr)');
+ const payLbl=`Vigo payı (<select class="inlineSel" id="sumPaySel">${[5,6,7].map(v=>`<option value="${v}"${String(v)===String(p)?' selected':''}>%${v}</option>`).join('')}</select>, ${base=='b'?'brüt kâr':'hasılat'})`;
+ $('sm').innerHTML=R('İşletmelere kesilecek fatura (KDV dahil)',f(T.g*1.2))+R('Hasılat (KDV hariç)',f(T.g))+R('Kuryeye ödenecek (KDV dahil)',f(T.k))+R('Cost / Maliyet (KDV hariç)',f(T.c))+R('Brüt kâr',f(T.b),'font-weight:700')+R('Brüt kâr %',pc(T.g?T.b/T.g*100:0))+R(payLbl,f(T.v))+R('Bayi (sana kalan)',f(T.z),'font-weight:700;color:var(--gr)');
 }
+$('sm').addEventListener('change',e=>{
+ if(e.target.id!=='sumPaySel') return;
+ setPayPct(e.target.value);
+});
 
 /* ---------- EXCEL İNDİRME ---------- */
 let downloadsNs=null;
