@@ -140,7 +140,7 @@ input,select{width:100%;box-sizing:border-box;margin-top:4px;padding:10px;font-s
 <div class="c"><h2>Ayarlar</h2>
 <div class="g">
 <label>Vigo payı<select id="pay"><option value="5">%5</option><option value="6">%6</option><option value="7">%7</option></select></label>
-<label>Pay tabanı<select id="base"><option value="h">Hasılat (firma formülü)</option><option value="b">Brüt kâr</option></select></label>
+<label>Pay tabanı<select id="base"><option value="h">Hasılat (firma formülü)</option></select></label>
 </div>
 <div class="n">Bu ayarlar hesabınla birlikte Supabase'te saklanır, İşletmeler / Gün Sonu sekmesiyle ortaktır.</div></div>
 
@@ -477,7 +477,7 @@ async function initData(){
   ]);
   if(e1) throw e1; if(e2) throw e2; if(e3) throw e3;
   S.biz=biz||[]; S.entries=entries||[];
-  if(settings){ $('pay').value=settings.pay; if(!$('pay').value) $('pay').value='5'; $('base').value=settings.base; }
+  if(settings){ $('pay').value=settings.pay; if(!$('pay').value) $('pay').value='5'; $('base').value=settings.base; if(!$('base').value) $('base').value='h'; }
   else{ await sb.from('settings').insert({pay:5,base:'h'}); }
   calc();
   renderRes();
@@ -513,7 +513,7 @@ function setupRealtime(){
   refreshEntriesUI(); renderRes();
  }).subscribe();
  const ch3=sb.channel('settings-'+uid).on('postgres_changes',{event:'*',schema:'public',table:'settings',filter:'user_id=eq.'+uid},payload=>{
-  if(payload.new){ $('pay').value=payload.new.pay; $('base').value=payload.new.base; calc(); if(activeTab===2) renderRes(); }
+  if(payload.new){ $('pay').value=payload.new.pay; $('base').value=payload.new.base; if(!$('base').value) $('base').value='h'; calc(); if(activeTab===2) renderRes(); }
  }).subscribe();
  channels=[ch1,ch2,ch3];
 }
