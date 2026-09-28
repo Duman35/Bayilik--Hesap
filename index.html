@@ -105,7 +105,6 @@ input,select{width:100%;box-sizing:border-box;margin-top:4px;padding:10px;font-s
    <label>Şifre<input id="lgPass" type="password" autocomplete="current-password" placeholder="En az 6 karakter"></label>
    <div style="height:14px"></div>
    <button class="btn p" id="lgBtn" onclick="doLogin()">Giriş yap</button>
-   <div class="switch">Hesabın yok mu? <a onclick="toggleMode()">Kayıt ol</a></div>
    <div id="lgMsg"></div>
    <div id="mockLoginNote" class="hide n" style="text-align:center">🧪 Önizleme modu: herhangi bir e-posta/şifre ile devam edebilirsin, gerçek hesabına dokunmaz.</div>
   </div>
@@ -255,6 +254,7 @@ input,select{width:100%;box-sizing:border-box;margin-top:4px;padding:10px;font-s
 <script>
 const SUPABASE_URL='https://tibavfqxbrmqrrobrysn.supabase.co';
 const SUPABASE_ANON_KEY='eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InRpYmF2ZnF4YnJtcXJyb2JyeXNuIiwicm9sZSI6ImFub24iLCJpYXQiOjE3OTA2MTQ3NjYsImV4cCI6MjEwNjE5MDc2Nn0.BReFc4KDQsWlaNU7g_0zvSFt0VE210tZ0EdEFahB-vU';
+const ADMIN_EMAIL='karadumanm.35@gmail.com';
 
 /* Önizleme modu: bu sayfa gerçek siteye (onrender.com) yüklenmediği sürece
    Supabase'e bağlanmaz, bunun yerine hafızada geçici sahte veriyle çalışır.
@@ -347,18 +347,8 @@ const pc=n=>'%'+n.toLocaleString('tr-TR',{minimumFractionDigits:2,maximumFractio
 const td=()=>{const d=new Date();return d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0')};
 const regionLabel=r=>r==='aydin'?'Aydın':'İzmir';
 
-/* ---------- GİRİŞ / KAYIT ---------- */
-let signupMode=false;
-function toggleMode(){
- signupMode=!signupMode;
- $('modeTitle').textContent=signupMode?'Kayıt ol':'Giriş yap';
- $('lgBtn').textContent=signupMode?'Kayıt ol':'Giriş yap';
- $('lgBtn').setAttribute('onclick',signupMode?'doSignup()':'doLogin()');
- document.querySelector('.switch').innerHTML=signupMode?'Zaten hesabın var mı? <a onclick="toggleMode()">Giriş yap</a>':'Hesabın yok mu? <a onclick="toggleMode()">Kayıt ol</a>';
- $('lgMsg').innerHTML='';
-}
+/* ---------- GİRİŞ ---------- */
 function trErr(msg){
- if(/already registered|already exists/i.test(msg)) return 'Bu e-posta zaten kayıtlı. Giriş yap.';
  if(/invalid login credentials/i.test(msg)) return 'E-posta veya şifre hatalı.';
  if(/email not confirmed/i.test(msg)) return 'E-postanı onaylaman gerekiyor. Gelen kutunu kontrol et.';
  if(/password.*(6|at least)/i.test(msg)) return 'Şifre en az 6 karakter olmalı.';
@@ -367,26 +357,24 @@ function trErr(msg){
 async function doLogin(){
  const email=$('lgEmail').value.trim(),pass=$('lgPass').value;
  if(!email||!pass){$('lgMsg').innerHTML='<div class="err">E-posta ve şifre gerekli.</div>';return}
+ if(!MOCK && email.toLowerCase()!==ADMIN_EMAIL){$('lgMsg').innerHTML='<div class="err">Bu e-posta için giriş izni yok.</div>';return}
  $('lgBtn').disabled=true;$('lgMsg').innerHTML='';
  const {error}=await sb.auth.signInWithPassword({email,password:pass});
  $('lgBtn').disabled=false;
  if(error){$('lgMsg').innerHTML='<div class="err">'+esc(trErr(error.message))+'</div>';return}
 }
-async function doSignup(){
- const email=$('lgEmail').value.trim(),pass=$('lgPass').value;
- if(!email||!pass){$('lgMsg').innerHTML='<div class="err">E-posta ve şifre gerekli.</div>';return}
- if(pass.length<6){$('lgMsg').innerHTML='<div class="err">Şifre en az 6 karakter olmalı.</div>';return}
- $('lgBtn').disabled=true;$('lgMsg').innerHTML='';
- const {data,error}=await sb.auth.signUp({email,password:pass});
- $('lgBtn').disabled=false;
- if(error){$('lgMsg').innerHTML='<div class="err">'+esc(trErr(error.message))+'</div>';return}
- if(data.session){return} // otomatik giriş yapıldı
- $('lgMsg').innerHTML='<div class="ok">Kayıt oluşturuldu. E-postana gelen onay bağlantısına tıkladıktan sonra giriş yapabilirsin.</div>';
-}
 async function doLogout(){ await sb.auth.signOut(); }
 
 sb.auth.onAuthStateChange((event,session)=>{
- if(session){ showApp(session); } else { showLogin(); }
+ if(session){
+  if(!MOCK && (session.user.email||'').toLowerCase()!==ADMIN_EMAIL){
+   sb.auth.signOut();
+   showLogin();
+   $('lgMsg').innerHTML='<div class="err">Bu e-posta için giriş izni yok.</div>';
+   return;
+  }
+  showApp(session);
+ } else { showLogin(); }
 });
 
 function showLogin(){
