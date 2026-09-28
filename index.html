@@ -567,17 +567,27 @@ function daysBetween(a,b){
  const d1=new Date(a+'T00:00:00'), d2=new Date(b+'T00:00:00');
  return Math.round((d2-d1)/86400000);
 }
+function computeBizTotalBayi(b){
+ const p=n2($('pay').value);
+ let pk=0,km=0;
+ S.entries.filter(e=>e.business_id===b.id).forEach(e=>{pk+=n2(e.pk);km+=n2(e.km)});
+ const g=pk*n2(b.ip)+km*n2(b.ik), k=pk*n2(b.kp)+km*n2(b.kk), c=k/1.2, br=g-c;
+ const v=g*p/100, z=br-v;
+ return z;
+}
 function renderLostList(){
  const list=S.biz.filter(b=>b.lost_date).sort((a,b)=>(b.lost_date||'').localeCompare(a.lost_date||''));
  if(!list.length){ $('lostList').innerHTML='<div class="n" style="margin:10px">Henüz kayıp işletme yok.</div>'; return; }
  $('lostList').innerHTML=list.map(b=>{
   const days=daysBetween(b.start_date,b.lost_date);
+  const bayiTotal=computeBizTotalBayi(b);
   return `<div class="bizrow" data-id="${b.id}" style="padding:12px 10px">
    <div class="entrytop"><b>${esc(b.name||'(adsız)')}</b> <span class="badge">${regionLabel(b.region)}</span></div>
    <div style="margin-top:6px;color:var(--mu);font-size:13px">
     İlk giriş: <b>${b.start_date?fmtDate(b.start_date):'—'}</b> · Kayıp tarihi: <b>${fmtDate(b.lost_date)}</b>
     ${days!==null?` · Çalışma süresi: <b>${days} gün</b>`:''}
    </div>
+   <div style="margin-top:4px;font-size:13px">Toplam kazandırdığı bayi kârı: <b style="color:var(--gr)">${f(bayiTotal)}</b></div>
    <div style="height:8px"></div>
    <button class="btn" data-restore="1">Geri Al (Aktif Yap)</button>
   </div>`;
