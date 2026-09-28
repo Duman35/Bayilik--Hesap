@@ -389,7 +389,7 @@ function showApp(session){
 
 /* ---------- HESAPLAYICI (tab 1, sadece hızlı hesap, kayıt tutmaz) ---------- */
 const calcIds=['pk','km','ip','ik','kp','kk','gun'];
-for(let i=1;i<=30;i++){const o=document.createElement('option');o.value=i;o.textContent=i+' gün';$('gun').appendChild(o)}
+[1,15,26,30].forEach(i=>{const o=document.createElement('option');o.value=i;o.textContent=i+' gün';$('gun').appendChild(o)});
 $('gun').value=26;
 function calc(){
  const v=i=>parseFloat($(i).value)||0, d=v('gun'), p=v('pay');
