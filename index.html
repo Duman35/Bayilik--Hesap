@@ -114,7 +114,7 @@ input,select{width:100%;box-sizing:border-box;margin-top:4px;padding:10px;font-s
 <div id="mockBanner" class="hide" style="background:#fef3c7;color:#92400e;border:1px solid #fbbf24;border-radius:10px;padding:10px 12px;font-size:13px;margin-bottom:10px">🧪 Önizleme modu — bu ekrandaki veriler örnektir, kaydedilmez ve gerçek siteye yansımaz. Değişiklikler onaylanınca "yükle" ile canlıya alınacak.</div>
 <div class="topbar"><span id="whoami"></span><button class="btn" onclick="doLogout()">Çıkış yap</button></div>
 <h1>Bayilik Kâr Hesaplayıcı</h1>
-<div class="tabs"><button class="tab on" id="tb1" onclick="showTab(1)">Hesaplayıcı</button><button class="tab" id="tb2" onclick="showTab(2)">Sonuç</button><button class="tab" id="tb3" onclick="showTab(3)">İşletmeleri Yönet</button><button class="tab" id="tb4" onclick="showTab(4)">Tüm Kayıtlar</button></div>
+<div class="tabs"><button class="tab on" id="tb1" onclick="showTab(1)">Hesaplayıcı</button><button class="tab" id="tb2" onclick="showTab(2)">Sonuç</button><button class="tab" id="tb3" onclick="showTab(3)">İşletmeleri Yönet</button><button class="tab" id="tb4" onclick="showTab(4)">Tüm Kayıtlar</button><button class="tab" id="tb5" onclick="showTab(5)">Kayıplar</button></div>
 <div class="stat" id="dbStat">Bağlanıyor…</div>
 <div id="t1">
 
@@ -185,7 +185,7 @@ input,select{width:100%;box-sizing:border-box;margin-top:4px;padding:10px;font-s
 
 <div id="t3" style="display:none">
 <div class="c"><h2>İşletmeleri Yönet</h2>
-<div class="n" style="margin:0 0 10px">İşletmeleri ekle, sil, ya da bir işletmenin adına dokunup fiyatlarını güncelle. İzmir ve Aydın bölgelerine ayrı ayrı kaydedilir. Buradaki değişiklikler "Tüm Kayıtlar" sekmesindeki işletme listesine de anında yansır.</div>
+<div class="n" style="margin:0 0 10px">İşletmeleri ekle, sil, ya da bir işletmenin adına dokunup fiyatlarını güncelle. İzmir ve Aydın bölgelerine ayrı ayrı kaydedilir. İşletmeyle çalışmayı bıraktıysan "Kayıp Olarak İşaretle" ile "Kayıplar" sekmesine taşı — geçmiş kayıtları silinmez, sadece o işletme için yeni kayıt girişi kapanır.</div>
 <div class="regiontabs">
  <button class="regiontab on" id="rt-izmir" onclick="setBizRegion('izmir')">İzmir</button>
  <button class="regiontab" id="rt-aydin" onclick="setBizRegion('aydin')">Aydın</button>
@@ -196,11 +196,20 @@ input,select{width:100%;box-sizing:border-box;margin-top:4px;padding:10px;font-s
  <div style="height:8px"></div>
  <div class="g">
   <label>Bölge<select id="newBizRegion"><option value="izmir">İzmir</option><option value="aydin">Aydın</option></select></label>
-  <label>&nbsp;<button class="btn p" style="margin-top:4px" onclick="addBiz()">+ İşletme Ekle</button></label>
+  <label>Anlaşma tarihi<input id="newBizDate" type="date"></label>
  </div>
+ <div style="height:8px"></div>
+ <button class="btn p" style="width:100%" onclick="addBiz()">+ İşletme Ekle</button>
 </div>
 <div style="height:10px"></div>
 <button class="btn p" style="width:100%" onclick="exportBizExcel()">İşletme Listesini Excel İndir</button>
+</div>
+</div>
+
+<div id="t5" style="display:none">
+<div class="c"><h2>Kayıplar</h2>
+<div class="n" style="margin:0 0 10px">"İşletmeleri Yönet" sekmesinde bir işletmeyi "Kayıp" olarak işaretlediğinde burada listelenir. Kayıp tarihinden önceki tüm gün sonu kayıtları hiçbir şekilde silinmez, sadece o tarihten sonra o işletme için yeni kayıt girilemez.</div>
+<div class="bizlist" id="lostList"></div>
 </div>
 </div>
 
@@ -248,8 +257,8 @@ function buildMockClient(){
  let seq=100;
  const DB={
   businesses:[
-   {id:'m1',user_id:MOCKUID,name:'Örnek İşletme (İzmir)',region:'izmir',ip:60,ik:10,kp:45,kk:7,created_at:new Date(Date.now()-172800000).toISOString()},
-   {id:'m2',user_id:MOCKUID,name:'Örnek İşletme (Aydın)',region:'aydin',ip:55,ik:9,kp:40,kk:6,created_at:new Date(Date.now()-86400000).toISOString()}
+   {id:'m1',user_id:MOCKUID,name:'Örnek İşletme (İzmir)',region:'izmir',ip:60,ik:10,kp:45,kk:7,start_date:'2026-09-01',lost_date:null,created_at:new Date(Date.now()-172800000).toISOString()},
+   {id:'m2',user_id:MOCKUID,name:'Örnek İşletme (Aydın)',region:'aydin',ip:55,ik:9,kp:40,kk:6,start_date:'2026-09-15',lost_date:null,created_at:new Date(Date.now()-86400000).toISOString()}
   ],
   entries:[
    {id:'e1',user_id:MOCKUID,business_id:'m1',entry_date:(()=>{const d=new Date();return d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0');})(),pk:30,km:12,updated_at:new Date().toISOString()}
@@ -419,10 +428,11 @@ $('base').addEventListener('change',()=>{ calc(); saveSettings(); });
 let activeTab=1;
 function showTab(n){
  activeTab=n;
- [1,2,3,4].forEach(i=>{ $('t'+i).style.display=(i===n?'':'none'); $('tb'+i).classList.toggle('on',i===n); });
+ [1,2,3,4,5].forEach(i=>{ $('t'+i).style.display=(i===n?'':'none'); $('tb'+i).classList.toggle('on',i===n); });
  if(n===2) renderRes();
  if(n===3) renderBizList();
  if(n===4) renderEntriesList();
+ if(n===5) renderLostList();
 }
 
 /* ---------- SUPABASE VERİ KATMANI ---------- */
@@ -463,6 +473,7 @@ function teardownRealtime(){ channels.forEach(c=>sb.removeChannel(c)); channels=
 
 async function initData(){
  $('dt').value=td();
+ $('newBizDate').value=td();
  resDates={izmir:{from:td(),to:td()},aydin:{from:td(),to:td()}};
  $('resDateFrom').value=td(); $('resDateTo').value=td();
  $('dbStat').textContent='Yükleniyor…';$('dbStat').classList.remove('err','ok');
@@ -492,6 +503,7 @@ async function initData(){
 
 function refreshBizUI(){
  if(activeTab===3) renderBizList();
+ if(activeTab===5) renderLostList();
  updateEnBizOptions();
 }
 function refreshEntriesUI(){ if(activeTab===4) renderEntriesList(); }
@@ -523,8 +535,8 @@ function setBizRegion(r){
  renderBizList();
 }
 function renderBizList(){
- const list=S.biz.filter(b=>(b.region||'izmir')===bizRegion);
- if(!list.length){ $('bizList').innerHTML='<div class="n" style="margin:10px">Bu bölgede işletme yok.</div>'; return; }
+ const list=S.biz.filter(b=>(b.region||'izmir')===bizRegion&&!b.lost_date);
+ if(!list.length){ $('bizList').innerHTML='<div class="n" style="margin:10px">Bu bölgede aktif işletme yok.</div>'; return; }
  $('bizList').innerHTML=list.map(b=>`<details class="bizrow" data-id="${b.id}">
   <summary>${esc(b.name||'(adsız)')}</summary>
   <div class="bizrow-body">
@@ -536,11 +548,15 @@ function renderBizList(){
     <label>Kurye paket ₺<input data-f="kp" type="number" inputmode="decimal" step="0.01" value="${esc(b.kp)}"></label>
     <label>Kurye km ₺<input data-f="kk" type="number" inputmode="decimal" step="0.01" value="${esc(b.kk)}"></label>
    </div>
-   <div class="n" style="margin:8px 0">Bölge: <b>${regionLabel(b.region)}</b> (işletme eklenirken belirlenir, sonradan değişmez)</div>
+   <div class="n" style="margin:8px 0">Bölge: <b>${regionLabel(b.region)}</b> · Anlaşma tarihi: <b>${b.start_date?fmtDate(b.start_date):'—'}</b> (işletme eklenirken belirlenir, sonradan değişmez)</div>
    <div class="g">
     <button class="btn p" data-upd="1">Güncelle</button>
     <button class="btn d" data-del="1">Sil</button>
    </div>
+   <div style="height:8px"></div>
+   <label>Kayıp tarihi<input data-f="lostpick" type="date" value="${td()}"></label>
+   <div style="height:6px"></div>
+   <button class="btn d" style="width:100%" data-lost="1">Kayıp Olarak İşaretle</button>
   </div>
  </details>`).join('');
 }
@@ -548,21 +564,54 @@ function updateEnBizOptions(){
  const sel=$('enBiz'); if(!sel) return;
  const prev=sel.value;
  const groups={izmir:[],aydin:[]};
- S.biz.forEach(b=>{ groups[b.region==='aydin'?'aydin':'izmir'].push(b); });
+ S.biz.filter(b=>!b.lost_date).forEach(b=>{ groups[b.region==='aydin'?'aydin':'izmir'].push(b); });
  const opt=list=>list.slice().sort((a,b)=>(a.name||'').localeCompare(b.name||'','tr')).map(b=>`<option value="${b.id}">${esc(b.name||'(adsız)')} (${regionLabel(b.region)})</option>`).join('');
  sel.innerHTML='<option value="">İşletme seç…</option>'
   +(groups.izmir.length?`<optgroup label="İzmir">${opt(groups.izmir)}</optgroup>`:'')
   +(groups.aydin.length?`<optgroup label="Aydın">${opt(groups.aydin)}</optgroup>`:'');
- sel.value=(prev&&S.biz.some(b=>b.id===prev))?prev:'';
+ sel.value=(prev&&S.biz.some(b=>b.id===prev&&!b.lost_date))?prev:'';
 }
+function daysBetween(a,b){
+ if(!a||!b) return null;
+ const d1=new Date(a+'T00:00:00'), d2=new Date(b+'T00:00:00');
+ return Math.round((d2-d1)/86400000);
+}
+function renderLostList(){
+ const list=S.biz.filter(b=>b.lost_date).sort((a,b)=>(b.lost_date||'').localeCompare(a.lost_date||''));
+ if(!list.length){ $('lostList').innerHTML='<div class="n" style="margin:10px">Henüz kayıp işletme yok.</div>'; return; }
+ $('lostList').innerHTML=list.map(b=>{
+  const days=daysBetween(b.start_date,b.lost_date);
+  return `<div class="bizrow" data-id="${b.id}" style="padding:12px 10px">
+   <div class="entrytop"><b>${esc(b.name||'(adsız)')}</b> <span class="badge">${regionLabel(b.region)}</span></div>
+   <div style="margin-top:6px;color:var(--mu);font-size:13px">
+    İlk giriş: <b>${b.start_date?fmtDate(b.start_date):'—'}</b> · Kayıp tarihi: <b>${fmtDate(b.lost_date)}</b>
+    ${days!==null?` · Çalışma süresi: <b>${days} gün</b>`:''}
+   </div>
+   <div style="height:8px"></div>
+   <button class="btn" data-restore="1">Geri Al (Aktif Yap)</button>
+  </div>`;
+ }).join('');
+}
+$('lostList').addEventListener('click',e=>{
+ const t=e.target; if(!t.dataset.restore) return;
+ const id=t.closest('.bizrow').dataset.id, b=S.biz.find(x=>x.id===id); if(!b) return;
+ sb.from('businesses').update({lost_date:null}).eq('id',id).then(({error})=>{
+  if(error){alert('İşlem yapılamadı: '+error.message);return}
+  b.lost_date=null;
+  renderLostList(); updateEnBizOptions();
+  if(activeTab===3) renderBizList();
+ });
+});
 function addBiz(){
  const name=$('newBizName').value.trim();
  const region=$('newBizRegion').value;
+ const startDate=$('newBizDate').value||td();
  if(!name){alert('İşletme adı gerekli.');return}
- sb.from('businesses').insert({name,region,ip:0,ik:0,kp:0,kk:0}).select().single().then(({data,error})=>{
+ sb.from('businesses').insert({name,region,ip:0,ik:0,kp:0,kk:0,start_date:startDate}).select().single().then(({data,error})=>{
   if(error){alert('İşletme eklenemedi: '+error.message);return}
   S.biz.push(data);
   $('newBizName').value='';
+  $('newBizDate').value=td();
   setBizRegion(region);
   updateEnBizOptions();
  });
@@ -589,6 +638,22 @@ $('bizList').addEventListener('click',e=>{
    const old=t.textContent; t.textContent='Güncellendi ✓';
    setTimeout(()=>{ if(t.isConnected) t.textContent=old; },1500);
   });
+  return;
+ }
+ if(t.dataset.lost){
+  const w=t.closest('.bizrow'), id=w.dataset.id, b=S.biz.find(x=>x.id===id); if(!b) return;
+  if(t.dataset.armed){
+   const lostDate=w.querySelector('[data-f="lostpick"]').value||td();
+   sb.from('businesses').update({lost_date:lostDate}).eq('id',id).then(({error})=>{
+    if(error){alert('İşlem yapılamadı: '+error.message);return}
+    b.lost_date=lostDate;
+    renderBizList(); updateEnBizOptions();
+    if(activeTab===5) renderLostList();
+   });
+   return;
+  }
+  t.dataset.armed='1'; t.textContent='Emin misin? Kayıp olarak işaretle';
+  setTimeout(()=>{if(t.isConnected){delete t.dataset.armed;t.textContent='Kayıp Olarak İşaretle'}},3000);
   return;
  }
  if(!t.dataset.del) return;
@@ -760,8 +825,8 @@ async function exportExcel(){
 }
 async function exportBizExcel(){
  if(typeof XLSX==='undefined'){alert('Excel kütüphanesi yüklenemedi, internet bağlantını kontrol et.');return}
- const rows=[['İşletme','Bölge','İşletme Paket ₺ (KDV hariç)','İşletme Km ₺ (KDV hariç)','Kurye Paket ₺ (KDV dahil)','Kurye Km ₺ (KDV dahil)']];
- S.biz.forEach(b=>rows.push([b.name||'(adsız)',regionLabel(b.region),n2(b.ip),n2(b.ik),n2(b.kp),n2(b.kk)]));
+ const rows=[['İşletme','Bölge','Durum','Anlaşma Tarihi','Kayıp Tarihi','İşletme Paket ₺ (KDV hariç)','İşletme Km ₺ (KDV hariç)','Kurye Paket ₺ (KDV dahil)','Kurye Km ₺ (KDV dahil)']];
+ S.biz.forEach(b=>rows.push([b.name||'(adsız)',regionLabel(b.region),b.lost_date?'Kayıp':'Aktif',b.start_date?fmtDate(b.start_date):'',b.lost_date?fmtDate(b.lost_date):'',n2(b.ip),n2(b.ik),n2(b.kp),n2(b.kk)]));
  const wb=XLSX.utils.book_new();
  XLSX.utils.book_append_sheet(wb,XLSX.utils.aoa_to_sheet(rows),'İşletmeler');
  const buf=XLSX.write(wb,{type:'array',bookType:'xlsx'});
