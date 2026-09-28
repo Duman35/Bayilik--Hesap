@@ -595,6 +595,11 @@ function renderLostList(){
 $('lostList').addEventListener('click',e=>{
  const t=e.target; if(!t.dataset.restore) return;
  const id=t.closest('.bizrow').dataset.id, b=S.biz.find(x=>x.id===id); if(!b) return;
+ if(!t.dataset.armed){
+  t.dataset.armed='1'; t.textContent='Emin misin? Aktif yap';
+  setTimeout(()=>{if(t.isConnected){delete t.dataset.armed;t.textContent='Geri Al (Aktif Yap)'}},3000);
+  return;
+ }
  sb.from('businesses').update({lost_date:null}).eq('id',id).then(({error})=>{
   if(error){alert('İşlem yapılamadı: '+error.message);return}
   b.lost_date=null;
