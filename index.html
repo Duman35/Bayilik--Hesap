@@ -41,6 +41,7 @@ input,select{width:100%;box-sizing:border-box;margin-top:4px;padding:10px;font-s
 .tb td{text-align:right;padding:7px 4px;border-bottom:1px solid var(--bd);font-variant-numeric:tabular-nums}
 .tb th:first-child,.tb td:first-child{text-align:left}
 .tb tr.tt td{font-weight:700;border-bottom:0}
+.tb tr.lostrow td{color:var(--rd)}
 .ov{overflow-x:auto}
 .stat{font-size:12px;color:var(--mu);margin-bottom:10px}
 .stat.err{color:var(--rd)}
@@ -607,13 +608,14 @@ function computeTotals(){
   const g=pk*n2(b.ip)+km*n2(b.ik), k=pk*n2(b.kp)+km*n2(b.kk), c=k/1.2, br=g-c;
   const v=g*p/100, z=br-v;
   T.pk+=pk;T.km+=km;T.g+=g;T.k+=k;T.v+=v;T.z+=z;
-  return{name:b.name||'(adsız)',lost:!!b.lost_date,pk,km,g,k,v,z};
+  const days=daysBetween(b.start_date,b.lost_date||td());
+  return{name:b.name||'(adsız)',lost:!!b.lost_date,days,pk,km,g,k,v,z};
  });
  return{rows,T};
 }
 function renderTotals(){
  const {rows,T}=computeTotals();
- let out=rows.map(r=>`<tr><td>${esc(r.name)}${r.lost?' <span class="badge">Kayıp</span>':''}</td><td>${r.pk}</td><td>${r.km}</td><td>${f(r.g)}</td><td>${f(r.k)}</td><td>${f(r.v)}</td><td>${f(r.z)}</td></tr>`).join('');
+ let out=rows.map(r=>`<tr${r.lost?' class="lostrow"':''}><td>${esc(r.name)}${r.days!==null?` ("${r.days} gün")`:''}${r.lost?' <span class="badge">Kayıp</span>':''}</td><td>${r.pk}</td><td>${r.km}</td><td>${f(r.g)}</td><td>${f(r.k)}</td><td>${f(r.v)}</td><td>${f(r.z)}</td></tr>`).join('');
  if(!rows.length) out='<tr><td colspan="7" class="n" style="padding:10px 0">Bu bölgede işletme yok.</td></tr>';
  out+=`<tr class="tt"><td>Toplam</td><td>${T.pk}</td><td>${T.km}</td><td>${f(T.g)}</td><td>${f(T.k)}</td><td>${f(T.v)}</td><td style="color:var(--gr)">${f(T.z)}</td></tr>`;
  $('totRs').innerHTML=out;
@@ -621,9 +623,9 @@ function renderTotals(){
 async function exportTotalsExcel(){
  if(typeof XLSX==='undefined'){alert('Excel kütüphanesi yüklenemedi, internet bağlantını kontrol et.');return}
  const {rows,T}=computeTotals();
- const data=[['İşletme','Durum','Paket','Km','Toplam Aldığımız (Hasılat)','Kuryeye Verdiğimiz','Vigo Payı','Bayi (Kalan)']];
- rows.forEach(r=>data.push([r.name,r.lost?'Kayıp':'Aktif',r.pk,r.km,r.g,r.k,r.v,r.z]));
- data.push(['TOPLAM','',T.pk,T.km,T.g,T.k,T.v,T.z]);
+ const data=[['İşletme','Durum','Aktif Gün Sayısı','Paket','Km','Toplam Aldığımız (Hasılat)','Kuryeye Verdiğimiz','Vigo Payı','Bayi (Kalan)']];
+ rows.forEach(r=>data.push([r.name,r.lost?'Kayıp':'Aktif',r.days!==null?r.days:'',r.pk,r.km,r.g,r.k,r.v,r.z]));
+ data.push(['TOPLAM','','',T.pk,T.km,T.g,T.k,T.v,T.z]);
  const wb=XLSX.utils.book_new();
  XLSX.utils.book_append_sheet(wb,XLSX.utils.aoa_to_sheet(data),'Genel Özet');
  const buf=XLSX.write(wb,{type:'array',bookType:'xlsx'});
