@@ -552,6 +552,12 @@ function addBiz(){
   updateEnBizOptions();
  });
 }
+$('bizList').addEventListener('toggle',e=>{
+ if(!e.target.matches||!e.target.matches('details.bizrow')) return;
+ if(e.target.open){
+  $('bizList').querySelectorAll('details.bizrow[open]').forEach(d=>{ if(d!==e.target) d.open=false; });
+ }
+},true);
 $('bizList').addEventListener('click',e=>{
  const t=e.target;
  if(t.dataset.upd){
