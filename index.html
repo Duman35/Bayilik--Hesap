@@ -71,13 +71,23 @@ input,select{width:100%;box-sizing:border-box;margin-top:4px;padding:10px;font-s
 .regiontab.on{background:var(--ac);border-color:var(--ac);color:#fff}
 .bizlist{max-height:420px;overflow-y:auto;border:1px solid var(--bd);border-radius:10px;margin-bottom:12px;-webkit-overflow-scrolling:touch}
 .reclist{max-height:60vh;overflow-y:auto;border:1px solid var(--bd);border-radius:10px;margin-bottom:12px;-webkit-overflow-scrolling:touch}
-.bizrow{padding:10px;border-bottom:1px solid var(--bd)}
+.bizrow{border-bottom:1px solid var(--bd)}
 .bizrow:last-child{border-bottom:0}
-.bizrow.pick{cursor:pointer}
-.bizrow.pick:active{background:var(--bg)}
+.bizrow>summary{padding:12px 10px;cursor:pointer;list-style:none;font-size:15px;font-weight:600;display:flex;justify-content:space-between;align-items:center}
+.bizrow>summary::-webkit-details-marker{display:none}
+.bizrow>summary:after{content:'▾';color:var(--mu);font-size:12px;font-weight:400;transition:transform .15s}
+.bizrow[open]>summary:after{transform:rotate(180deg)}
+.bizrow-body{padding:0 10px 12px}
 .bizname-row{display:flex;justify-content:space-between;align-items:center;gap:8px}
 .bizname-row input{margin:0;font-weight:600}
-.entryrow{padding:10px;border-bottom:1px solid var(--bd);font-size:13px}
+.daterow{border-bottom:1px solid var(--bd)}
+.daterow:last-child{border-bottom:0}
+.daterow>summary{padding:12px 10px;cursor:pointer;list-style:none;font-size:15px;font-weight:600;display:flex;justify-content:space-between;align-items:center}
+.daterow>summary::-webkit-details-marker{display:none}
+.daterow>summary:after{content:'▾';color:var(--mu);font-size:12px;font-weight:400;transition:transform .15s}
+.daterow[open]>summary:after{transform:rotate(180deg)}
+.daterow-body{padding:0 10px 10px}
+.entryrow{padding:8px 0;border-bottom:1px solid var(--bd);font-size:13px}
 .entryrow:last-child{border-bottom:0}
 .entrytop{display:flex;justify-content:space-between;gap:8px;align-items:center}
 .badge{font-size:11px;padding:2px 6px;border-radius:999px;background:var(--bg);border:1px solid var(--bd);color:var(--mu)}
@@ -104,7 +114,8 @@ input,select{width:100%;box-sizing:border-box;margin-top:4px;padding:10px;font-s
 <div id="mockBanner" class="hide" style="background:#fef3c7;color:#92400e;border:1px solid #fbbf24;border-radius:10px;padding:10px 12px;font-size:13px;margin-bottom:10px">🧪 Önizleme modu — bu ekrandaki veriler örnektir, kaydedilmez ve gerçek siteye yansımaz. Değişiklikler onaylanınca "yükle" ile canlıya alınacak.</div>
 <div class="topbar"><span id="whoami"></span><button class="btn" onclick="doLogout()">Çıkış yap</button></div>
 <h1>Bayilik Kâr Hesaplayıcı</h1>
-<div class="tabs"><button class="tab on" id="tb1" onclick="showTab(1)">Hesaplayıcı</button><button class="tab" id="tb2" onclick="showTab(2)">Gün Sonu Giriş</button><button class="tab" id="tb3" onclick="showTab(3)">İşletmeleri Yönet</button><button class="tab" id="tb4" onclick="showTab(4)">Tüm Kayıtlar</button></div>
+<div class="tabs"><button class="tab on" id="tb1" onclick="showTab(1)">Hesaplayıcı</button><button class="tab" id="tb2" onclick="showTab(2)">Sonuç</button><button class="tab" id="tb3" onclick="showTab(3)">İşletmeleri Yönet</button><button class="tab" id="tb4" onclick="showTab(4)">Tüm Kayıtlar</button></div>
+<div class="stat" id="dbStat">Bağlanıyor…</div>
 <div id="t1">
 
 <div class="c big"><h2>Günlük giriş</h2>
@@ -148,40 +159,24 @@ input,select{width:100%;box-sizing:border-box;margin-top:4px;padding:10px;font-s
 </div>
 
 <div id="t2" style="display:none">
-<div class="stat" id="dbStat">Bağlanıyor…</div>
-
-<div class="c big"><h2>Gün Sonu Girişi</h2>
-<label>İşletme<select id="enBiz"><option value="">İşletme seç…</option></select></label>
-<div style="height:10px"></div>
-<label>Tarih<input id="dt" type="date"></label>
-<div style="height:10px"></div>
-<div class="g">
-<label>Paket sayısı<input id="enPk" type="number" inputmode="decimal" min="0" placeholder="0"></label>
-<label>Fazla km<input id="enKm" type="number" inputmode="decimal" min="0" placeholder="0"></label>
-</div>
-<div style="height:12px"></div>
-<button class="btn p" onclick="submitEntry()">Ekle</button>
-<div class="n">İşletme seç, tarihi ve o günkü paket/fazla km sayısını gir, "Ekle"ye bas. Eklediğinde "Tüm Kayıtlar" sekmesine geçip kaydı orada görürsün. Aynı işletme + aynı tarih için tekrar eklersen değerler güncellenir. İşletme listesini "İşletmeleri Yönet" sekmesinden yönetebilirsin.</div>
-</div>
-
 <div class="c res"><h2>Sonuç</h2>
 <div class="regiontabs">
  <button class="regiontab on" id="res-rt-izmir" onclick="setResRegion('izmir')">İzmir</button>
  <button class="regiontab" id="res-rt-aydin" onclick="setResRegion('aydin')">Aydın</button>
 </div>
-<label>Dönem<select id="rg"><option value="d">Seçili gün</option><option value="m">Seçili tarihin ayı</option><option value="a">Tüm kayıtlar</option></select></label>
+<label>Tarih<input id="resDate" type="date"></label>
 <div style="height:10px"></div>
 <div class="ov"><table class="tb"><thead><tr><th>İşletme</th><th>Paket</th><th>Km</th><th>Hasılat</th><th>Brüt kâr</th><th>Vigo</th><th>Bayi</th></tr></thead><tbody id="rs"></tbody></table></div>
 <div id="sm" style="margin-top:10px"></div>
 <div style="height:10px"></div>
-<button class="btn p" onclick="exportExcel()">Excel indir (seçili dönem)</button>
-<div class="n">Bu tablo işletmelerin GÜNCEL fiyatlarıyla hesaplanır; geçmişte fiyat değiştiyse eski günler yeni fiyatla yeniden hesaplanmış olarak görünür. En fazla en yakın 2000 kayıt okunur.</div>
+<button class="btn p" onclick="exportExcel()">Excel indir (seçili tarih)</button>
+<div class="n">Bu tablo işletmelerin GÜNCEL fiyatlarıyla hesaplanır; geçmişte fiyat değiştiyse eski günler yeni fiyatla yeniden hesaplanmış olarak görünür. Seçtiğin tarihte ve seçtiğin bölgede kayıt varsa burada listelenir.</div>
 </div>
 </div>
 
 <div id="t3" style="display:none">
 <div class="c"><h2>İşletmeleri Yönet</h2>
-<div class="n" style="margin:0 0 10px">İşletmeleri ekle, fiyatlarını güncelle ya da sil. İzmir ve Aydın bölgelerine ayrı ayrı kaydedilir. Buradaki değişiklikler "Gün Sonu Giriş" sekmesindeki işletme listesine de anında yansır.</div>
+<div class="n" style="margin:0 0 10px">İşletmeleri ekle, sil, ya da bir işletmenin adına dokunup fiyatlarını güncelle. İzmir ve Aydın bölgelerine ayrı ayrı kaydedilir. Buradaki değişiklikler "Tüm Kayıtlar" sekmesindeki işletme listesine de anında yansır.</div>
 <div class="regiontabs">
  <button class="regiontab on" id="rt-izmir" onclick="setBizRegion('izmir')">İzmir</button>
  <button class="regiontab" id="rt-aydin" onclick="setBizRegion('aydin')">Aydın</button>
@@ -201,8 +196,22 @@ input,select{width:100%;box-sizing:border-box;margin-top:4px;padding:10px;font-s
 </div>
 
 <div id="t4" style="display:none">
+<div class="c big" id="entryForm"><h2>Gün Sonu Girişi</h2>
+<label>İşletme<select id="enBiz"><option value="">İşletme seç…</option></select></label>
+<div style="height:10px"></div>
+<label>Tarih<input id="dt" type="date"></label>
+<div style="height:10px"></div>
+<div class="g">
+<label>Paket sayısı<input id="enPk" type="number" inputmode="decimal" min="0" placeholder="0"></label>
+<label>Fazla km<input id="enKm" type="number" inputmode="decimal" min="0" placeholder="0"></label>
+</div>
+<div style="height:12px"></div>
+<button class="btn p" onclick="submitEntry()">Ekle</button>
+<div class="n">İşletme seç, tarihi ve o günkü paket/fazla km sayısını gir, "Ekle"ye bas. Aynı işletme + aynı tarih için tekrar eklersen değerler güncellenir. Aşağıdaki listeden bir kayda dokunursan bu formu onunla doldurup güncelleme yapabilirsin.</div>
+</div>
+
 <div class="c"><h2>Tüm Gün Sonu Kayıtları</h2>
-<div class="n" style="margin:0 0 10px">"Gün Sonu Giriş" sekmesinde eklediğin her kayıt burada listelenir. Düzenlemek için bir kayda dokun, silmek için Sil'e iki kez bas.</div>
+<div class="n" style="margin:0 0 10px">Tarihe dokunarak o günkü kayıtları aç/kapat. Bir kayda dokunmak yukarıdaki formu doldurur, Sil'e iki kez basmak siler.</div>
 <div id="entriesList" class="reclist"></div>
 <div style="height:10px"></div>
 <button class="btn p" style="width:100%" onclick="exportEntriesExcel()">Tüm Kayıtları Excel İndir</button>
@@ -421,6 +430,7 @@ function teardownRealtime(){ channels.forEach(c=>sb.removeChannel(c)); channels=
 
 async function initData(){
  $('dt').value=td();
+ $('resDate').value=td();
  $('dbStat').textContent='Yükleniyor…';$('dbStat').classList.remove('err','ok');
  try{
   const [{data:biz,error:e1},{data:entries,error:e2},{data:settings,error:e3}]=await Promise.all([
@@ -480,18 +490,21 @@ function setBizRegion(r){
 function renderBizList(){
  const list=S.biz.filter(b=>(b.region||'izmir')===bizRegion);
  if(!list.length){ $('bizList').innerHTML='<div class="n" style="margin:10px">Bu bölgede işletme yok.</div>'; return; }
- $('bizList').innerHTML=list.map(b=>`<div class="bizrow" data-id="${b.id}">
-  <div class="bizname-row"><input data-f="name" value="${esc(b.name||'')}" placeholder="İşletme adı"><button class="btn d" data-del="1">Sil</button></div>
-  <div style="height:6px"></div>
-  <div class="g4">
-   <label>İşl. paket ₺<input data-f="ip" type="number" inputmode="decimal" step="0.01" value="${esc(b.ip)}"></label>
-   <label>İşl. km ₺<input data-f="ik" type="number" inputmode="decimal" step="0.01" value="${esc(b.ik)}"></label>
-   <label>Kurye paket ₺<input data-f="kp" type="number" inputmode="decimal" step="0.01" value="${esc(b.kp)}"></label>
-   <label>Kurye km ₺<input data-f="kk" type="number" inputmode="decimal" step="0.01" value="${esc(b.kk)}"></label>
+ $('bizList').innerHTML=list.map(b=>`<details class="bizrow" data-id="${b.id}">
+  <summary>${esc(b.name||'(adsız)')}</summary>
+  <div class="bizrow-body">
+   <div class="bizname-row"><input data-f="name" value="${esc(b.name||'')}" placeholder="İşletme adı"><button class="btn d" data-del="1">Sil</button></div>
+   <div style="height:6px"></div>
+   <div class="g4">
+    <label>İşl. paket ₺<input data-f="ip" type="number" inputmode="decimal" step="0.01" value="${esc(b.ip)}"></label>
+    <label>İşl. km ₺<input data-f="ik" type="number" inputmode="decimal" step="0.01" value="${esc(b.ik)}"></label>
+    <label>Kurye paket ₺<input data-f="kp" type="number" inputmode="decimal" step="0.01" value="${esc(b.kp)}"></label>
+    <label>Kurye km ₺<input data-f="kk" type="number" inputmode="decimal" step="0.01" value="${esc(b.kk)}"></label>
+   </div>
+   <div style="height:6px"></div>
+   <label>Bölge<select data-f="region"><option value="izmir" ${b.region!=='aydin'?'selected':''}>İzmir</option><option value="aydin" ${b.region==='aydin'?'selected':''}>Aydın</option></select></label>
   </div>
-  <div style="height:6px"></div>
-  <label>Bölge<select data-f="region"><option value="izmir" ${b.region!=='aydin'?'selected':''}>İzmir</option><option value="aydin" ${b.region==='aydin'?'selected':''}>Aydın</option></select></label>
- </div>`).join('');
+ </details>`).join('');
 }
 function updateEnBizOptions(){
  const sel=$('enBiz'); if(!sel) return;
@@ -558,21 +571,31 @@ function submitEntry(){
   if(i>=0) S.entries[i]=data; else S.entries.push(data);
   renderRes();
   $('enPk').value=''; $('enKm').value=''; $('enBiz').value='';
-  showTab(4);
+  renderEntriesList(date);
  });
 }
-function renderEntriesList(){
- const rows=[...S.entries].sort((a,b)=>a.entry_date<b.entry_date?1:(a.entry_date>b.entry_date?-1:0));
- if(!rows.length){ $('entriesList').innerHTML='<div class="n" style="margin:10px">Henüz kayıt yok.</div>'; return; }
- $('entriesList').innerHTML=rows.map(e=>{
-  const b=S.biz.find(x=>x.id===e.business_id);
-  return `<div class="entryrow" data-id="${e.id}">
-   <div class="entrytop">
-    <div><b>${b?esc(b.name||'(adsız)'):'(silinmiş işletme)'}</b> ${b?`<span class="badge">${regionLabel(b.region)}</span>`:''}</div>
-    <button class="btn d" data-del="1" style="padding:4px 10px;font-size:12px">Sil</button>
-   </div>
-   <div style="margin-top:4px;color:var(--mu)">${e.entry_date} · Paket: ${e.pk} · Km: ${e.km}</div>
-  </div>`;
+const fmtDate=s=>{ if(!s) return ''; const p=s.split('-'); return p.length===3?(p[2]+'.'+p[1]+'.'+p[0]):s; };
+function renderEntriesList(focusDate){
+ const groups=new Map();
+ S.entries.forEach(e=>{ if(!groups.has(e.entry_date)) groups.set(e.entry_date,[]); groups.get(e.entry_date).push(e); });
+ const dates=[...groups.keys()].sort((a,b)=>a<b?1:(a>b?-1:0));
+ if(!dates.length){ $('entriesList').innerHTML='<div class="n" style="margin:10px">Henüz kayıt yok.</div>'; return; }
+ $('entriesList').innerHTML=dates.map(d=>{
+  const items=groups.get(d).slice().sort((a,b)=>{
+   const ba=S.biz.find(x=>x.id===a.business_id),bb=S.biz.find(x=>x.id===b.business_id);
+   return (ba&&ba.name||'').localeCompare((bb&&bb.name)||'','tr');
+  });
+  const body=items.map(e=>{
+   const b=S.biz.find(x=>x.id===e.business_id);
+   return `<div class="entryrow" data-id="${e.id}">
+    <div class="entrytop">
+     <div><b>${b?esc(b.name||'(adsız)'):'(silinmiş işletme)'}</b> ${b?`<span class="badge">${regionLabel(b.region)}</span>`:''}</div>
+     <button class="btn d" data-del="1" style="padding:4px 10px;font-size:12px">Sil</button>
+    </div>
+    <div style="margin-top:4px;color:var(--mu)">Paket: ${e.pk} · Km: ${e.km}</div>
+   </div>`;
+  }).join('');
+  return `<details class="daterow" data-date="${d}"${d===focusDate?' open':''}><summary>${fmtDate(d)}</summary><div class="daterow-body">${body}</div></details>`;
  }).join('');
 }
 $('entriesList').addEventListener('click',e=>{
@@ -596,19 +619,18 @@ $('entriesList').addEventListener('click',e=>{
  $('enBiz').value=en.business_id;
  $('dt').value=en.entry_date;
  $('enPk').value=en.pk; $('enKm').value=en.km;
- showTab(2);
+ $('entryForm').scrollIntoView({behavior:'smooth',block:'start'});
 });
-$('dt').addEventListener('change',renderRes);
-$('rg').addEventListener('change',renderRes);
+$('resDate').addEventListener('change',renderRes);
 
 function saveSettings(){
  queueWrite('settings',()=>sb.from('settings').upsert({pay:n2($('pay').value),base:$('base').value},{onConflict:'user_id'}));
 }
 
-/* ---------- SONUÇ (dönem bazlı özet) ---------- */
+/* ---------- SONUÇ (seçili tarih ve bölge) ---------- */
 function computeReport(){
- const dt=$('dt').value,rg=$('rg').value,p=n2($('pay').value),base=$('base').value;
- const inPeriod=k=>rg=='a'||(rg=='d'?k==dt:k.slice(0,7)==dt.slice(0,7));
+ const dt=$('resDate').value,p=n2($('pay').value),base=$('base').value;
+ const inPeriod=k=>k===dt;
  const T={pk:0,km:0,g:0,k:0,c:0,b:0,v:0,z:0};
  const rows=S.biz.filter(b=>(b.region||'izmir')===resRegion).map(b=>{
   let pk=0,km=0;
@@ -618,7 +640,7 @@ function computeReport(){
   T.pk+=pk;T.km+=km;T.g+=g;T.k+=k;T.c+=c;T.b+=br;T.v+=v;T.z+=z;
   return{name:b.name||'(adsız)',pk,km,g,k,c,br,v,z};
  });
- return{rows,T,p,base,dt,rg,region:resRegion};
+ return{rows,T,p,base,dt,region:resRegion};
 }
 function renderRes(){
  const {rows,T,p,base}=computeReport();
@@ -648,13 +670,12 @@ async function downloadBlob(filename,blob){
 }
 async function exportExcel(){
  if(typeof XLSX==='undefined'){alert('Excel kütüphanesi yüklenemedi, internet bağlantını kontrol et.');return}
- const {rows,T,p,base,dt,rg,region}=computeReport();
+ const {rows,T,p,base,dt,region}=computeReport();
  const ozet=[['İşletme','Paket','Km','Hasılat (KDV hariç)','Fatura (KDV dahil)','Kurye Ödemesi (KDV dahil)','Maliyet (KDV hariç)','Brüt Kâr','Brüt Kâr %','Vigo Payı','Bayi (Kalan)']];
  rows.forEach(r=>ozet.push([r.name,r.pk,r.km,r.g,r.g*1.2,r.k,r.c,r.br,r.g?r.br/r.g*100:0,r.v,r.z]));
  ozet.push(['TOPLAM',T.pk,T.km,T.g,T.g*1.2,T.k,T.c,T.b,T.g?T.b/T.g*100:0,T.v,T.z]);
- const inPeriod=k=>rg=='a'||(rg=='d'?k==dt:k.slice(0,7)==dt.slice(0,7));
  const gunluk=[['Tarih','İşletme','Paket','Km','Hasılat','Brüt Kâr','Vigo Payı','Bayi']];
- S.entries.filter(e=>inPeriod(e.entry_date)).sort((a,b)=>a.entry_date<b.entry_date?-1:1).forEach(e=>{
+ S.entries.filter(e=>e.entry_date===dt).sort((a,b)=>a.entry_date<b.entry_date?-1:1).forEach(e=>{
   const b=S.biz.find(x=>x.id===e.business_id); if(!b||(b.region||'izmir')!==region) return;
   const pk=n2(e.pk),km=n2(e.km),g=pk*n2(b.ip)+km*n2(b.ik),k=pk*n2(b.kp)+km*n2(b.kk),c=k/1.2,br=g-c;
   const v=(base=='b'?Math.max(br,0):g)*p/100,z=br-v;
@@ -664,8 +685,7 @@ async function exportExcel(){
  XLSX.utils.book_append_sheet(wb,XLSX.utils.aoa_to_sheet(ozet),'Özet');
  XLSX.utils.book_append_sheet(wb,XLSX.utils.aoa_to_sheet(gunluk),'Günlük Kayıtlar');
  const buf=XLSX.write(wb,{type:'array',bookType:'xlsx'});
- const per=rg=='a'?'tum-kayitlar':(rg=='m'?dt.slice(0,7):dt);
- await downloadBlob(`bayilik-${regionLabel(region)}-${per}.xlsx`,new Blob([buf],{type:'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'}));
+ await downloadBlob(`bayilik-${regionLabel(region)}-${dt||'tarihsiz'}.xlsx`,new Blob([buf],{type:'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'}));
 }
 async function exportBizExcel(){
  if(typeof XLSX==='undefined'){alert('Excel kütüphanesi yüklenemedi, internet bağlantını kontrol et.');return}
