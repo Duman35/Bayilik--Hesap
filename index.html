@@ -165,6 +165,10 @@ input,select{width:100%;box-sizing:border-box;margin-top:4px;padding:10px;font-s
 </div>
 
 <div class="c res"><h2>Sonuç</h2>
+<div class="regiontabs">
+ <button class="regiontab on" id="res-rt-izmir" onclick="setResRegion('izmir')">İzmir</button>
+ <button class="regiontab" id="res-rt-aydin" onclick="setResRegion('aydin')">Aydın</button>
+</div>
 <label>Dönem<select id="rg"><option value="d">Seçili gün</option><option value="m">Seçili tarihin ayı</option><option value="a">Tüm kayıtlar</option></select></label>
 <div style="height:10px"></div>
 <div class="ov"><table class="tb"><thead><tr><th>İşletme</th><th>Paket</th><th>Km</th><th>Hasılat</th><th>Brüt kâr</th><th>Vigo</th><th>Bayi</th></tr></thead><tbody id="rs"></tbody></table></div>
@@ -274,7 +278,7 @@ function buildMockClient(){
    insert(p){ mode='insert'; payload=p; return api; },
    update(p){ mode='update'; payload=p; return api; },
    delete(){ mode='delete'; return api; },
-   upsert(p,opts){ mode='upsert'; payload=p; upsertOpts=opts; return exec(); },
+   upsert(p,opts){ mode='upsert'; payload=p; upsertOpts=opts; return api; },
    then(res,rej){ return exec().then(res,rej); }
   };
   return api;
@@ -396,6 +400,13 @@ let currentUid=null;
 let S={biz:[],entries:[]};
 let channels=[];
 let bizRegion='izmir';
+let resRegion='izmir';
+function setResRegion(r){
+ resRegion=r;
+ $('res-rt-izmir').classList.toggle('on',r==='izmir');
+ $('res-rt-aydin').classList.toggle('on',r==='aydin');
+ renderRes();
+}
 const writeQ=new Map();
 function queueWrite(key,fn){
  const prev=writeQ.get(key)||Promise.resolve();
@@ -487,7 +498,7 @@ function updateEnBizOptions(){
  const prev=sel.value;
  const groups={izmir:[],aydin:[]};
  S.biz.forEach(b=>{ groups[b.region==='aydin'?'aydin':'izmir'].push(b); });
- const opt=list=>list.slice().sort((a,b)=>(a.name||'').localeCompare(b.name||'','tr')).map(b=>`<option value="${b.id}">${esc(b.name||'(adsız)')}</option>`).join('');
+ const opt=list=>list.slice().sort((a,b)=>(a.name||'').localeCompare(b.name||'','tr')).map(b=>`<option value="${b.id}">${esc(b.name||'(adsız)')} (${regionLabel(b.region)})</option>`).join('');
  sel.innerHTML='<option value="">İşletme seç…</option>'
   +(groups.izmir.length?`<optgroup label="İzmir">${opt(groups.izmir)}</optgroup>`:'')
   +(groups.aydin.length?`<optgroup label="Aydın">${opt(groups.aydin)}</optgroup>`:'');
@@ -599,7 +610,7 @@ function computeReport(){
  const dt=$('dt').value,rg=$('rg').value,p=n2($('pay').value),base=$('base').value;
  const inPeriod=k=>rg=='a'||(rg=='d'?k==dt:k.slice(0,7)==dt.slice(0,7));
  const T={pk:0,km:0,g:0,k:0,c:0,b:0,v:0,z:0};
- const rows=S.biz.map(b=>{
+ const rows=S.biz.filter(b=>(b.region||'izmir')===resRegion).map(b=>{
   let pk=0,km=0;
   S.entries.filter(e=>e.business_id===b.id&&inPeriod(e.entry_date)).forEach(e=>{pk+=n2(e.pk);km+=n2(e.km)});
   const g=pk*n2(b.ip)+km*n2(b.ik),k=pk*n2(b.kp)+km*n2(b.kk),c=k/1.2,br=g-c;
@@ -607,7 +618,7 @@ function computeReport(){
   T.pk+=pk;T.km+=km;T.g+=g;T.k+=k;T.c+=c;T.b+=br;T.v+=v;T.z+=z;
   return{name:b.name||'(adsız)',pk,km,g,k,c,br,v,z};
  });
- return{rows,T,p,base,dt,rg};
+ return{rows,T,p,base,dt,rg,region:resRegion};
 }
 function renderRes(){
  const {rows,T,p,base}=computeReport();
@@ -637,14 +648,14 @@ async function downloadBlob(filename,blob){
 }
 async function exportExcel(){
  if(typeof XLSX==='undefined'){alert('Excel kütüphanesi yüklenemedi, internet bağlantını kontrol et.');return}
- const {rows,T,p,base,dt,rg}=computeReport();
+ const {rows,T,p,base,dt,rg,region}=computeReport();
  const ozet=[['İşletme','Paket','Km','Hasılat (KDV hariç)','Fatura (KDV dahil)','Kurye Ödemesi (KDV dahil)','Maliyet (KDV hariç)','Brüt Kâr','Brüt Kâr %','Vigo Payı','Bayi (Kalan)']];
  rows.forEach(r=>ozet.push([r.name,r.pk,r.km,r.g,r.g*1.2,r.k,r.c,r.br,r.g?r.br/r.g*100:0,r.v,r.z]));
  ozet.push(['TOPLAM',T.pk,T.km,T.g,T.g*1.2,T.k,T.c,T.b,T.g?T.b/T.g*100:0,T.v,T.z]);
  const inPeriod=k=>rg=='a'||(rg=='d'?k==dt:k.slice(0,7)==dt.slice(0,7));
  const gunluk=[['Tarih','İşletme','Paket','Km','Hasılat','Brüt Kâr','Vigo Payı','Bayi']];
  S.entries.filter(e=>inPeriod(e.entry_date)).sort((a,b)=>a.entry_date<b.entry_date?-1:1).forEach(e=>{
-  const b=S.biz.find(x=>x.id===e.business_id); if(!b) return;
+  const b=S.biz.find(x=>x.id===e.business_id); if(!b||(b.region||'izmir')!==region) return;
   const pk=n2(e.pk),km=n2(e.km),g=pk*n2(b.ip)+km*n2(b.ik),k=pk*n2(b.kp)+km*n2(b.kk),c=k/1.2,br=g-c;
   const v=(base=='b'?Math.max(br,0):g)*p/100,z=br-v;
   gunluk.push([e.entry_date,b.name||'(adsız)',pk,km,g,br,v,z]);
@@ -654,7 +665,7 @@ async function exportExcel(){
  XLSX.utils.book_append_sheet(wb,XLSX.utils.aoa_to_sheet(gunluk),'Günlük Kayıtlar');
  const buf=XLSX.write(wb,{type:'array',bookType:'xlsx'});
  const per=rg=='a'?'tum-kayitlar':(rg=='m'?dt.slice(0,7):dt);
- await downloadBlob(`bayilik-${per}.xlsx`,new Blob([buf],{type:'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'}));
+ await downloadBlob(`bayilik-${regionLabel(region)}-${per}.xlsx`,new Blob([buf],{type:'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'}));
 }
 async function exportBizExcel(){
  if(typeof XLSX==='undefined'){alert('Excel kütüphanesi yüklenemedi, internet bağlantını kontrol et.');return}
