@@ -94,11 +94,13 @@ input,select{width:100%;box-sizing:border-box;margin-top:4px;padding:10px;font-s
    <button class="btn p" id="lgBtn" onclick="doLogin()">Giriş yap</button>
    <div class="switch">Hesabın yok mu? <a onclick="toggleMode()">Kayıt ol</a></div>
    <div id="lgMsg"></div>
+   <div id="mockLoginNote" class="hide n" style="text-align:center">🧪 Önizleme modu: herhangi bir e-posta/şifre ile devam edebilirsin, gerçek hesabına dokunmaz.</div>
   </div>
  </div>
 </div>
 
 <div id="app" class="w hide">
+<div id="mockBanner" class="hide" style="background:#fef3c7;color:#92400e;border:1px solid #fbbf24;border-radius:10px;padding:10px 12px;font-size:13px;margin-bottom:10px">🧪 Önizleme modu — bu ekrandaki veriler örnektir, kaydedilmez ve gerçek siteye yansımaz. Değişiklikler onaylanınca "yükle" ile canlıya alınacak.</div>
 <div class="topbar"><span id="whoami"></span><button class="btn" onclick="doLogout()">Çıkış yap</button></div>
 <h1>Bayilik Kâr Hesaplayıcı</h1>
 <div class="tabs"><button class="tab on" id="tb1" onclick="showTab(1)">Hesaplayıcı</button><button class="tab" id="tb2" onclick="showTab(2)">İşletmeler / Gün Sonu</button></div>
@@ -218,7 +220,89 @@ input,select{width:100%;box-sizing:border-box;margin-top:4px;padding:10px;font-s
 <script>
 const SUPABASE_URL='https://tibavfqxbrmqrrobrysn.supabase.co';
 const SUPABASE_ANON_KEY='eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InRpYmF2ZnF4YnJtcXJyb2JyeXNuIiwicm9sZSI6ImFub24iLCJpYXQiOjE3OTA2MTQ3NjYsImV4cCI6MjEwNjE5MDc2Nn0.BReFc4KDQsWlaNU7g_0zvSFt0VE210tZ0EdEFahB-vU';
-const sb=window.supabase.createClient(SUPABASE_URL,SUPABASE_ANON_KEY,{auth:{persistSession:true,autoRefreshToken:true}});
+
+/* Önizleme modu: bu sayfa gerçek siteye (onrender.com) yüklenmediği sürece
+   Supabase'e bağlanmaz, bunun yerine hafızada geçici sahte veriyle çalışır.
+   Böylece burada, canlıya almadan önce, gerçek görünüm ve akış test edilebilir. */
+const MOCK=!location.hostname.endsWith('onrender.com');
+const sb=MOCK?buildMockClient():window.supabase.createClient(SUPABASE_URL,SUPABASE_ANON_KEY,{auth:{persistSession:true,autoRefreshToken:true}});
+
+function buildMockClient(){
+ const MOCKUID='preview-user';
+ let seq=100;
+ const DB={
+  businesses:[
+   {id:'m1',user_id:MOCKUID,name:'Örnek İşletme (İzmir)',region:'izmir',ip:60,ik:10,kp:45,kk:7,created_at:new Date(Date.now()-172800000).toISOString()},
+   {id:'m2',user_id:MOCKUID,name:'Örnek İşletme (Aydın)',region:'aydin',ip:55,ik:9,kp:40,kk:6,created_at:new Date(Date.now()-86400000).toISOString()}
+  ],
+  entries:[
+   {id:'e1',user_id:MOCKUID,business_id:'m1',entry_date:(()=>{const d=new Date();return d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0');})(),pk:30,km:12,updated_at:new Date().toISOString()}
+  ],
+  settings:[{user_id:MOCKUID,pay:5,base:'h'}]
+ };
+ function mockFrom(table){
+  const store=DB[table];
+  let mode=null,payload=null,filters={},order=null,limit=null,single=false,maybeSingle=false,upsertOpts=null;
+  function exec(){
+   return new Promise(resolve=>setTimeout(()=>{
+    let data=null;
+    try{
+     if(mode==='insert'){
+      const row=Object.assign({id:'m'+(++seq),user_id:MOCKUID,created_at:new Date().toISOString()},payload);
+      store.push(row); data=row;
+     }else if(mode==='update'){
+      const row=store.find(r=>Object.keys(filters).every(k=>r[k]===filters[k]));
+      if(row) Object.assign(row,payload);
+      data=row||null;
+     }else if(mode==='delete'){
+      const idx=store.findIndex(r=>Object.keys(filters).every(k=>r[k]===filters[k]));
+      if(idx>=0) store.splice(idx,1);
+      data=null;
+     }else if(mode==='upsert'){
+      const keys=((upsertOpts&&upsertOpts.onConflict)||'').split(',').map(s=>s.trim()).filter(k=>k&&k!=='user_id');
+      let row=keys.length?store.find(r=>keys.every(k=>r[k]===payload[k])):store[0];
+      if(row) Object.assign(row,payload);
+      else{ row=Object.assign({id:'m'+(++seq),user_id:MOCKUID},payload); store.push(row); }
+      data=row;
+     }else{
+      let rows=store.slice();
+      if(order) rows.sort((a,b)=>(a[order.field]<b[order.field]?-1:1)*(order.asc?1:-1));
+      if(limit) rows=rows.slice(0,limit);
+      data=(single||maybeSingle)?(rows[0]!==undefined?rows[0]:null):rows;
+     }
+     resolve({data,error:null});
+    }catch(err){ resolve({data:null,error:{message:String(err&&err.message||err)}}); }
+   },120));
+  }
+  const api={
+   select(){ mode=mode||'select'; return api; },
+   order(field,opts){ order={field,asc:!(opts&&opts.ascending===false)}; return api; },
+   limit(n){ limit=n; return api; },
+   maybeSingle(){ maybeSingle=true; return exec(); },
+   single(){ single=true; return exec(); },
+   eq(field,val){ filters[field]=val; if(mode==='update'||mode==='delete') return exec(); return api; },
+   insert(p){ mode='insert'; payload=p; return api; },
+   update(p){ mode='update'; payload=p; return api; },
+   delete(){ mode='delete'; return api; },
+   upsert(p,opts){ mode='upsert'; payload=p; upsertOpts=opts; return exec(); },
+   then(res,rej){ return exec().then(res,rej); }
+  };
+  return api;
+ }
+ let mockUser=null, authCb=null;
+ return {
+  auth:{
+   signInWithPassword: async ()=>{ mockUser={id:MOCKUID,email:'onizleme@ornek.com'}; authCb&&authCb('SIGNED_IN',{user:mockUser}); return {error:null}; },
+   signUp: async ({email})=>{ mockUser={id:MOCKUID,email:email||'onizleme@ornek.com'}; const session={user:mockUser}; authCb&&authCb('SIGNED_IN',session); return {data:{session},error:null}; },
+   signOut: async ()=>{ mockUser=null; authCb&&authCb('SIGNED_OUT',null); },
+   onAuthStateChange:(cb)=>{ authCb=cb; },
+   getSession: async ()=>({data:{session:mockUser?{user:mockUser}:null}})
+  },
+  from: mockFrom,
+  channel(){ const c={ on(){return c;}, subscribe(){return c;} }; return c; },
+  removeChannel(){}
+ };
+}
 
 const $=id=>document.getElementById(id);
 const esc=x=>String(x).replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
@@ -278,6 +362,7 @@ function showLogin(){
 function showApp(session){
  $('loginScreen').classList.add('hide');
  $('app').classList.remove('hide');
+ $('mockBanner').classList.toggle('hide',!MOCK);
  $('whoami').textContent=session.user.email||'';
  if(currentUid!==session.user.id){ currentUid=session.user.id; initData(); }
 }
@@ -621,6 +706,7 @@ async function exportEntriesExcel(){
 }
 
 /* ---------- BAŞLANGIÇ ---------- */
+if(MOCK) $('mockLoginNote').classList.remove('hide');
 sb.auth.getSession().then(({data})=>{
  if(data.session){ showApp(data.session); } else { showLogin(); }
 });
