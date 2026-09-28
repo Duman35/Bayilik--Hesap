@@ -115,7 +115,7 @@ input,select{width:100%;box-sizing:border-box;margin-top:4px;padding:10px;font-s
 <div id="mockBanner" class="hide" style="background:#fef3c7;color:#92400e;border:1px solid #fbbf24;border-radius:10px;padding:10px 12px;font-size:13px;margin-bottom:10px">🧪 Önizleme modu — bu ekrandaki veriler örnektir, kaydedilmez ve gerçek siteye yansımaz. Değişiklikler onaylanınca "yükle" ile canlıya alınacak.</div>
 <div class="topbar"><span id="whoami"></span><button class="btn" onclick="doLogout()">Çıkış yap</button></div>
 <h1>Bayilik Kâr Hesaplayıcı</h1>
-<div class="tabs"><button class="tab on" id="tb1" onclick="showTab(1)">Hesaplayıcı</button><button class="tab" id="tb2" onclick="showTab(2)">Sonuç</button><button class="tab" id="tb3" onclick="showTab(3)">İşletmeleri Yönet</button><button class="tab" id="tb4" onclick="showTab(4)">Tüm Kayıtlar</button><button class="tab" id="tb5" onclick="showTab(5)">Kayıplar</button></div>
+<div class="tabs"><button class="tab on" id="tb1" onclick="showTab(1)">Hesaplayıcı</button><button class="tab" id="tb2" onclick="showTab(2)">Sonuç</button><button class="tab" id="tb3" onclick="showTab(3)">İşletmeleri Yönet</button><button class="tab" id="tb4" onclick="showTab(4)">Tüm Kayıtlar</button><button class="tab" id="tb5" onclick="showTab(5)">Kayıplar</button><button class="tab" id="tb6" onclick="showTab(6)">Genel Özet</button></div>
 <div class="stat" id="dbStat">Bağlanıyor…</div>
 <div id="t1">
 
@@ -146,8 +146,9 @@ input,select{width:100%;box-sizing:border-box;margin-top:4px;padding:10px;font-s
 
 <div class="c res"><h2>Sonuç</h2>
 <div class="h"><div></div><div>Günlük</div><div><select id="gun"></select></div></div>
-<div class="r"><span>İşletmeye kesilecek fatura (KDV dahil)</span><span id="a3"></span><span id="a3n"></span></div>
-<div class="r"><span>Revenue / Hasılat (KDV hariç)</span><span id="a1"></span><span id="a1n"></span></div>
+<div class="r"><span>İşletmeye kesilecek tutar (KDV hariç)</span><span id="a1"></span><span id="a1n"></span></div>
+<div class="r"><span>+ KDV %20</span><span id="a2"></span><span id="a2n"></span></div>
+<div class="r t"><span>İşletmeye kesilecek toplam fatura (KDV dahil)</span><span id="a3"></span><span id="a3n"></span></div>
 <div class="r"><span>Kuryeye ödenecek (KDV dahil)</span><span id="b1" style="color:var(--rd)"></span><span id="b1n" style="color:var(--rd)"></span></div>
 <div class="r"><span>Cost / Maliyet (KDV hariç, kurye ÷ 1,2)</span><span id="c1"></span><span id="c1n"></span></div>
 <div class="r t"><span>Brüt kâr</span><span id="k1"></span><span id="k1n"></span></div>
@@ -205,6 +206,19 @@ input,select{width:100%;box-sizing:border-box;margin-top:4px;padding:10px;font-s
 <div class="c"><h2>Kayıplar</h2>
 <div class="n" style="margin:0 0 10px">"İşletmeleri Yönet" sekmesinde bir işletmeyi "Kayıp" olarak işaretlediğinde burada listelenir. Kayıp tarihinden önceki tüm gün sonu kayıtları hiçbir şekilde silinmez, sadece o tarihten sonra o işletme için yeni kayıt girilemez.</div>
 <div class="bizlist" id="lostList"></div>
+</div>
+</div>
+
+<div id="t6" style="display:none">
+<div class="c res"><h2>Genel Özet</h2>
+<div class="n" style="margin:0 0 10px">Her işletmenin bugüne kadar eklenmiş TÜM kayıtlarının toplamı (tarih filtresi yok, aktif+kayıp tüm işletmeler dahil). Güncel fiyatlar ve Vigo payı yüzdesiyle hesaplanır, yeni kayıt girdikçe kendiliğinden güncellenir.</div>
+<div class="regiontabs">
+ <button class="regiontab on" id="tot-rt-izmir" onclick="setTotRegion('izmir')">İzmir</button>
+ <button class="regiontab" id="tot-rt-aydin" onclick="setTotRegion('aydin')">Aydın</button>
+</div>
+<div class="ov"><table class="tb"><thead><tr><th>İşletme</th><th>Paket</th><th>Km</th><th>Toplam Aldığımız</th><th>Kuryeye Verdiğimiz</th><th>Vigo Payı</th><th>Bayi (Kalan)</th></tr></thead><tbody id="totRs"></tbody></table></div>
+<div style="height:10px"></div>
+<button class="btn p" style="width:100%" onclick="exportTotalsExcel()">Excel İndir</button>
 </div>
 </div>
 
@@ -401,7 +415,7 @@ function calc(){
  const taban=$('base').value==='b'?Math.max(brut,0):gelir;
  const pay=taban*p/100, bayi=brut-pay;
  const set=(id,x)=>{$(id).textContent=f(x);$(id+'n').textContent=f(x*d)};
- set('a1',gelir);set('a3',fat);set('b1',kurye);set('c1',cost);set('k1',brut);set('p1',pay);
+ set('a1',gelir);set('a2',gelir*0.2);set('a3',fat);set('b1',kurye);set('c1',cost);set('k1',brut);set('p1',pay);
  $('z').textContent=f(bayi);$('zn').textContent=f(bayi*d);
  $('m1').textContent=$('m1n').textContent=pc(gelir?brut/gelir*100:0);
  $('m2').textContent=$('m2n').textContent=pc(gelir?bayi/gelir*100:0);
@@ -420,11 +434,12 @@ $('base').addEventListener('change',()=>{ calc(); saveSettings(); if(activeTab==
 let activeTab=1;
 function showTab(n){
  activeTab=n;
- [1,2,3,4,5].forEach(i=>{ $('t'+i).style.display=(i===n?'':'none'); $('tb'+i).classList.toggle('on',i===n); });
+ [1,2,3,4,5,6].forEach(i=>{ $('t'+i).style.display=(i===n?'':'none'); $('tb'+i).classList.toggle('on',i===n); });
  if(n===2) renderRes();
  if(n===3) renderBizList();
  if(n===4) renderEntriesList();
  if(n===5) renderLostList();
+ if(n===6) renderTotals();
 }
 
 /* ---------- SUPABASE VERİ KATMANI ---------- */
@@ -495,9 +510,10 @@ async function initData(){
 function refreshBizUI(){
  if(activeTab===3) renderBizList();
  if(activeTab===5) renderLostList();
+ if(activeTab===6) renderTotals();
  updateEnBizOptions();
 }
-function refreshEntriesUI(){ if(activeTab===4) renderEntriesList(); }
+function refreshEntriesUI(){ if(activeTab===4) renderEntriesList(); if(activeTab===6) renderTotals(); }
 
 function setupRealtime(){
  teardownRealtime();
@@ -574,6 +590,44 @@ function computeBizTotalBayi(b){
  const g=pk*n2(b.ip)+km*n2(b.ik), k=pk*n2(b.kp)+km*n2(b.kk), c=k/1.2, br=g-c;
  const v=g*p/100, z=br-v;
  return z;
+}
+let totRegion='izmir';
+function setTotRegion(r){
+ totRegion=r;
+ $('tot-rt-izmir').classList.toggle('on',r==='izmir');
+ $('tot-rt-aydin').classList.toggle('on',r==='aydin');
+ renderTotals();
+}
+function computeTotals(){
+ const p=n2($('pay').value);
+ const T={pk:0,km:0,g:0,k:0,v:0,z:0};
+ const rows=S.biz.filter(b=>(b.region||'izmir')===totRegion).map(b=>{
+  let pk=0,km=0;
+  S.entries.filter(e=>e.business_id===b.id).forEach(e=>{pk+=n2(e.pk);km+=n2(e.km)});
+  const g=pk*n2(b.ip)+km*n2(b.ik), k=pk*n2(b.kp)+km*n2(b.kk), c=k/1.2, br=g-c;
+  const v=g*p/100, z=br-v;
+  T.pk+=pk;T.km+=km;T.g+=g;T.k+=k;T.v+=v;T.z+=z;
+  return{name:b.name||'(adsız)',lost:!!b.lost_date,pk,km,g,k,v,z};
+ });
+ return{rows,T};
+}
+function renderTotals(){
+ const {rows,T}=computeTotals();
+ let out=rows.map(r=>`<tr><td>${esc(r.name)}${r.lost?' <span class="badge">Kayıp</span>':''}</td><td>${r.pk}</td><td>${r.km}</td><td>${f(r.g)}</td><td>${f(r.k)}</td><td>${f(r.v)}</td><td>${f(r.z)}</td></tr>`).join('');
+ if(!rows.length) out='<tr><td colspan="7" class="n" style="padding:10px 0">Bu bölgede işletme yok.</td></tr>';
+ out+=`<tr class="tt"><td>Toplam</td><td>${T.pk}</td><td>${T.km}</td><td>${f(T.g)}</td><td>${f(T.k)}</td><td>${f(T.v)}</td><td style="color:var(--gr)">${f(T.z)}</td></tr>`;
+ $('totRs').innerHTML=out;
+}
+async function exportTotalsExcel(){
+ if(typeof XLSX==='undefined'){alert('Excel kütüphanesi yüklenemedi, internet bağlantını kontrol et.');return}
+ const {rows,T}=computeTotals();
+ const data=[['İşletme','Durum','Paket','Km','Toplam Aldığımız (Hasılat)','Kuryeye Verdiğimiz','Vigo Payı','Bayi (Kalan)']];
+ rows.forEach(r=>data.push([r.name,r.lost?'Kayıp':'Aktif',r.pk,r.km,r.g,r.k,r.v,r.z]));
+ data.push(['TOPLAM','',T.pk,T.km,T.g,T.k,T.v,T.z]);
+ const wb=XLSX.utils.book_new();
+ XLSX.utils.book_append_sheet(wb,XLSX.utils.aoa_to_sheet(data),'Genel Özet');
+ const buf=XLSX.write(wb,{type:'array',bookType:'xlsx'});
+ await downloadBlob(`genel-ozet-${regionLabel(totRegion)}.xlsx`,new Blob([buf],{type:'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'}));
 }
 function renderLostList(){
  const list=S.biz.filter(b=>b.lost_date).sort((a,b)=>(b.lost_date||'').localeCompare(a.lost_date||''));
@@ -790,7 +844,7 @@ function renderRes(){
  $('rs').innerHTML=out;
  const R=(a,b,st)=>`<div class="r" style="grid-template-columns:2fr 1fr;${st||''}"><span>${a}</span><span>${b}</span></div>`;
  const payLbl=`Vigo payı (<select class="inlineSel" id="sumPaySel">${[5,6,7].map(v=>`<option value="${v}"${String(v)===String(p)?' selected':''}>%${v}</option>`).join('')}</select>, ${base=='b'?'brüt kâr':'hasılat'})`;
- $('sm').innerHTML=R('İşletmelere kesilecek fatura (KDV dahil)',f(T.g*1.2))+R('Hasılat (KDV hariç)',f(T.g))+R('Kuryeye ödenecek (KDV dahil)',f(T.k))+R('Cost / Maliyet (KDV hariç)',f(T.c))+R('Brüt kâr',f(T.b),'font-weight:700')+R('Brüt kâr %',pc(T.g?T.b/T.g*100:0))+R(payLbl,f(T.v))+R('Bayi (sana kalan)',f(T.z),'font-weight:700;color:var(--gr)');
+ $('sm').innerHTML=R('İşletmeye kesilecek tutar (KDV hariç)',f(T.g))+R('+ KDV %20',f(T.g*0.2))+R('İşletmeye kesilecek toplam fatura (KDV dahil)',f(T.g*1.2),'font-weight:700')+R('Kuryeye ödenecek (KDV dahil)',f(T.k))+R('Cost / Maliyet (KDV hariç)',f(T.c))+R('Brüt kâr',f(T.b),'font-weight:700')+R('Brüt kâr %',pc(T.g?T.b/T.g*100:0))+R(payLbl,f(T.v))+R('Bayi (sana kalan)',f(T.z),'font-weight:700;color:var(--gr)');
 }
 $('sm').addEventListener('change',e=>{
  if(e.target.id!=='sumPaySel') return;
