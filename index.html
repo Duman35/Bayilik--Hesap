@@ -1,0 +1,431 @@
+<!DOCTYPE html>
+<html lang="tr"><head><meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Bayilik Kâr Hesaplayıcı</title>
+<style>
+:root{box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px);--bg:#f5f6f8;--card:#fff;--tx:#1a1d24;--mu:#6b7280;--bd:#e3e6ea;--ac:#2563eb;--gr:#15803d;--rd:#b91c1c}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){--bg:#111318;--card:#1b1f27;--tx:#eef0f4;--mu:#9aa3b2;--bd:#2c323d;--ac:#60a5fa;--gr:#4ade80;--rd:#f87171}}
+:root[data-theme="dark"]{--bg:#111318;--card:#1b1f27;--tx:#eef0f4;--mu:#9aa3b2;--bd:#2c323d;--ac:#60a5fa;--gr:#4ade80;--rd:#f87171}
+html{scroll-padding-top:env(safe-area-inset-top,0px)}
+body{margin:0;background:var(--bg);color:var(--tx);font:16px/1.4 system-ui,-apple-system,Segoe UI,Roboto,sans-serif}
+.w{max-width:720px;margin:0 auto;padding:16px}
+h1{font-size:20px;margin:4px 0 14px}
+.c{background:var(--card);border:1px solid var(--bd);border-radius:12px;padding:14px;margin-bottom:12px}
+.c h2{font-size:13px;text-transform:uppercase;letter-spacing:.05em;color:var(--mu);margin:0 0 10px}
+.g{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+label{display:block;font-size:13px;color:var(--mu)}
+input,select{width:100%;box-sizing:border-box;margin-top:4px;padding:10px;font-size:16px;border:1px solid var(--bd);border-radius:8px;background:var(--bg);color:var(--tx)}
+.big input{font-size:20px;font-weight:600}
+.res{border:2px solid var(--ac);overflow-x:auto}
+.h{display:grid;grid-template-columns:1.4fr 1fr 1fr;gap:8px;align-items:end;margin-bottom:6px}
+.h select{margin:0;font-weight:600}
+.h div{font-size:12px;color:var(--mu);text-align:right}
+.h div:first-child{text-align:left}
+.r{display:grid;grid-template-columns:1.4fr 1fr 1fr;gap:8px;padding:8px 0;border-bottom:1px solid var(--bd);font-size:14px}
+.r:last-of-type{border:0}
+.r span:first-child{color:var(--mu)}
+.r b,.r span+span{text-align:right;font-variant-numeric:tabular-nums}
+.t{font-weight:700;font-size:15px}
+.t span:first-child{color:var(--tx)}
+.n{font-size:12px;color:var(--mu);margin-top:8px}
+.tabs{display:flex;gap:6px;margin-bottom:12px}
+.tab{flex:1;padding:10px;border:1px solid var(--bd);border-radius:10px;background:var(--card);color:var(--tx);font:600 14px system-ui;cursor:pointer}
+.tab.on{background:var(--ac);border-color:var(--ac);color:#fff}
+.bz{border:1px solid var(--bd);border-radius:10px;padding:10px;margin-bottom:10px}
+.bh{display:flex;gap:8px;margin-bottom:8px}.bh input{margin:0;font-weight:600}
+.btn{padding:10px 14px;border:1px solid var(--bd);border-radius:8px;background:var(--bg);color:var(--tx);font-size:14px;cursor:pointer}
+.btn.p{background:var(--ac);border-color:var(--ac);color:#fff;width:100%}
+.btn.d{background:var(--rd);border-color:var(--rd);color:#fff}
+.btn:disabled{opacity:.5;cursor:not-allowed}
+.g4{display:grid;grid-template-columns:1fr 1fr;gap:8px}
+.dr{display:grid;grid-template-columns:1.2fr 1fr 1fr;gap:8px;align-items:end;margin-bottom:8px}
+.dr b{padding-bottom:10px;font-size:14px;overflow-wrap:anywhere}
+.dr input{margin:0}
+.tb{width:100%;border-collapse:collapse;font-size:13px;min-width:520px}
+.tb th{color:var(--mu);font-weight:500;text-align:right;padding:6px 4px;border-bottom:1px solid var(--bd)}
+.tb td{text-align:right;padding:7px 4px;border-bottom:1px solid var(--bd);font-variant-numeric:tabular-nums}
+.tb th:first-child,.tb td:first-child{text-align:left}
+.tb tr.tt td{font-weight:700;border-bottom:0}
+.ov{overflow-x:auto}
+.stat{font-size:12px;color:var(--mu);margin-bottom:10px}
+.stat.err{color:var(--rd)}
+.stat.ok{color:var(--gr)}
+.topbar{display:flex;justify-content:space-between;align-items:center;gap:10px;margin-bottom:10px}
+.topbar span{font-size:13px;color:var(--mu);overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.hide{display:none!important}
+.loginwrap{min-height:100vh;display:flex;align-items:center;justify-content:center;padding:16px}
+.loginbox{width:100%;max-width:380px}
+.loginbox h1{text-align:center}
+.switch{text-align:center;font-size:13px;color:var(--mu);margin-top:10px}
+.switch a{color:var(--ac);cursor:pointer;text-decoration:underline}
+.err{color:var(--rd);font-size:13px;margin-top:8px}
+.ok{color:var(--gr);font-size:13px;margin-top:8px}
+</style></head><body>
+
+<div id="loginScreen" class="loginwrap">
+ <div class="loginbox">
+  <h1>Bayilik Kâr Hesaplayıcı</h1>
+  <div class="c">
+   <h2 id="modeTitle">Giriş yap</h2>
+   <label>E-posta<input id="lgEmail" type="email" autocomplete="username" placeholder="ornek@eposta.com"></label>
+   <div style="height:10px"></div>
+   <label>Şifre<input id="lgPass" type="password" autocomplete="current-password" placeholder="En az 6 karakter"></label>
+   <div style="height:14px"></div>
+   <button class="btn p" id="lgBtn" onclick="doLogin()">Giriş yap</button>
+   <div class="switch">Hesabın yok mu? <a onclick="toggleMode()">Kayıt ol</a></div>
+   <div id="lgMsg"></div>
+  </div>
+ </div>
+</div>
+
+<div id="app" class="w hide">
+<div class="topbar"><span id="whoami"></span><button class="btn" onclick="doLogout()">Çıkış yap</button></div>
+<h1>Bayilik Kâr Hesaplayıcı</h1>
+<div class="tabs"><button class="tab on" id="tb1" onclick="showTab(1)">Hesaplayıcı</button><button class="tab" id="tb2" onclick="showTab(2)">İşletmeler / Gün Sonu</button></div>
+<div id="t1">
+
+<div class="c big"><h2>Günlük giriş</h2>
+<div class="g">
+<label>Paket sayısı (günlük)<input id="pk" type="number" inputmode="decimal" min="0" value="0"></label>
+<label>Fazladan km (günlük)<input id="km" type="number" inputmode="decimal" min="0" value="0"></label>
+</div></div>
+
+<div class="c"><h2>İşletmeden alınan (KDV hariç birim)</h2>
+<div class="g">
+<label>Paket başı ₺<input id="ip" type="number" inputmode="decimal" step="0.01" value="60"></label>
+<label>Km başı ₺<input id="ik" type="number" inputmode="decimal" step="0.01" value="10"></label>
+</div></div>
+
+<div class="c"><h2>Kuryeye ödenen (KDV dahil birim)</h2>
+<div class="g">
+<label>Paket başı ₺<input id="kp" type="number" inputmode="decimal" step="0.01" value="45"></label>
+<label>Km başı ₺<input id="kk" type="number" inputmode="decimal" step="0.01" value="7"></label>
+</div></div>
+
+<div class="c"><h2>Ayarlar</h2>
+<div class="g">
+<label>Vigo payı<select id="pay"><option value="5">%5</option><option value="6">%6</option><option value="7">%7</option></select></label>
+<label>Pay tabanı<select id="base"><option value="h">Hasılat (firma formülü)</option><option value="b">Brüt kâr</option></select></label>
+</div>
+<div class="n">Bu ayarlar hesabınla birlikte Supabase'te saklanır, İşletmeler / Gün Sonu sekmesiyle ortaktır.</div></div>
+
+<div class="c res"><h2>Sonuç</h2>
+<div class="h"><div></div><div>Günlük</div><div><select id="gun"></select></div></div>
+<div class="r"><span>İşletmeye kesilecek fatura (KDV dahil)</span><span id="a3"></span><span id="a3n"></span></div>
+<div class="r"><span>Revenue / Hasılat (KDV hariç)</span><span id="a1"></span><span id="a1n"></span></div>
+<div class="r"><span>Kuryeye ödenecek (KDV dahil)</span><span id="b1" style="color:var(--rd)"></span><span id="b1n" style="color:var(--rd)"></span></div>
+<div class="r"><span>Cost / Maliyet (KDV hariç, kurye ÷ 1,2)</span><span id="c1"></span><span id="c1n"></span></div>
+<div class="r t"><span>Brüt kâr</span><span id="k1"></span><span id="k1n"></span></div>
+<div class="r"><span>Brüt kâr %</span><span id="m1"></span><span id="m1n"></span></div>
+<div class="r"><span id="pl">Vigo payı</span><span id="p1" style="color:var(--rd)"></span><span id="p1n" style="color:var(--rd)"></span></div>
+<div class="r t"><span>Bayi (KDV hariç) — sana kalan</span><span id="z" style="color:var(--gr)"></span><span id="zn" style="color:var(--gr)"></span></div>
+<div class="r"><span>Bayi payı % (hasılata göre)</span><span id="m2"></span><span id="m2n"></span></div>
+<div class="n">Firmanın Excel formülüne göre: Hasılat = KDV hariç tutar; Maliyet = kurye ödemesi ÷ 1,2; Brüt kâr = Hasılat − Maliyet; Vigo payı = Hasılat × %; Bayi = Brüt kâr − Vigo payı. Gün sütunu günlük değerlerin seçilen gün sayısıyla çarpımıdır. Bu kart hızlı tek seferlik hesap içindir, bu ekrandaki paket/km/gün alanları kaydedilmez — kalıcı kayıt için diğer sekmeyi kullan.</div>
+</div>
+</div>
+
+<div id="t2" style="display:none">
+<div class="stat" id="dbStat">Bağlanıyor…</div>
+<div class="c"><h2>İşletmeler ve anlaşma fiyatları</h2>
+<div id="bz"></div>
+<button class="btn p" onclick="addBiz()">+ İşletme ekle</button>
+<div class="n">İşletme fiyatları KDV hariç, kurye fiyatları KDV dahil girilir. Vigo payı ve pay tabanı Hesaplayıcı sekmesindeki ayarlardan alınır. Fiyat değişirse geçmiş günlerin sonuçları da yeni fiyatla hesaplanır. Bu liste Supabase'te saklanır; aynı hesapla açtığın her cihazda anlık senkron görünür.</div></div>
+
+<div class="c big"><h2>Gün sonu girişi</h2>
+<label>Tarih<input id="dt" type="date"></label>
+<div style="height:10px"></div>
+<div id="dl"></div>
+<div class="n">Girdiklerin otomatik kaydedilir. Tarihi değiştirip başka günü girebilir veya düzeltebilirsin.</div></div>
+
+<div class="c res"><h2>Sonuç</h2>
+<label>Dönem<select id="rg"><option value="d">Seçili gün</option><option value="m">Seçili tarihin ayı</option><option value="a">Tüm kayıtlar</option></select></label>
+<div style="height:10px"></div>
+<div class="ov"><table class="tb"><thead><tr><th>İşletme</th><th>Paket</th><th>Km</th><th>Hasılat</th><th>Brüt kâr</th><th>Vigo</th><th>Bayi</th></tr></thead><tbody id="rs"></tbody></table></div>
+<div id="sm" style="margin-top:10px"></div>
+<div style="height:10px"></div>
+<button class="btn p" id="xlBtn" onclick="exportExcel()">Excel indir (seçili dönem)</button>
+<div class="n">Günlük kayıtlar sekmesi işletmelerin GÜNCEL fiyatlarıyla hesaplanır; geçmişte fiyat değiştiyse eski günler yeni fiyatla yeniden hesaplanmış olarak iner. En fazla en yakın 2000 kayıt okunur.</div>
+</div>
+</div>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+<script>
+const SUPABASE_URL='https://tibavfqxbrmqrrobrysn.supabase.co';
+const SUPABASE_ANON_KEY='eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InRpYmF2ZnF4YnJtcXJyb2JyeXNuIiwicm9sZSI6ImFub24iLCJpYXQiOjE3OTA2MTQ3NjYsImV4cCI6MjEwNjE5MDc2Nn0.BReFc4KDQsWlaNU7g_0zvSFt0VE210tZ0EdEFahB-vU';
+const sb=window.supabase.createClient(SUPABASE_URL,SUPABASE_ANON_KEY,{auth:{persistSession:true,autoRefreshToken:true}});
+
+const $=id=>document.getElementById(id);
+const esc=x=>String(x).replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
+const n2=x=>parseFloat(x)||0;
+const f=n=>n.toLocaleString('tr-TR',{minimumFractionDigits:2,maximumFractionDigits:2})+' ₺';
+const pc=n=>'%'+n.toLocaleString('tr-TR',{minimumFractionDigits:2,maximumFractionDigits:2});
+const td=()=>{const d=new Date();return d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0')};
+
+/* ---------- GİRİŞ / KAYIT ---------- */
+let signupMode=false;
+function toggleMode(){
+ signupMode=!signupMode;
+ $('modeTitle').textContent=signupMode?'Kayıt ol':'Giriş yap';
+ $('lgBtn').textContent=signupMode?'Kayıt ol':'Giriş yap';
+ $('lgBtn').setAttribute('onclick',signupMode?'doSignup()':'doLogin()');
+ document.querySelector('.switch').innerHTML=signupMode?'Zaten hesabın var mı? <a onclick="toggleMode()">Giriş yap</a>':'Hesabın yok mu? <a onclick="toggleMode()">Kayıt ol</a>';
+ $('lgMsg').innerHTML='';
+}
+function trErr(msg){
+ if(/already registered|already exists/i.test(msg)) return 'Bu e-posta zaten kayıtlı. Giriş yap.';
+ if(/invalid login credentials/i.test(msg)) return 'E-posta veya şifre hatalı.';
+ if(/email not confirmed/i.test(msg)) return 'E-postanı onaylaman gerekiyor. Gelen kutunu kontrol et.';
+ if(/password.*(6|at least)/i.test(msg)) return 'Şifre en az 6 karakter olmalı.';
+ return msg;
+}
+async function doLogin(){
+ const email=$('lgEmail').value.trim(),pass=$('lgPass').value;
+ if(!email||!pass){$('lgMsg').innerHTML='<div class="err">E-posta ve şifre gerekli.</div>';return}
+ $('lgBtn').disabled=true;$('lgMsg').innerHTML='';
+ const {error}=await sb.auth.signInWithPassword({email,password:pass});
+ $('lgBtn').disabled=false;
+ if(error){$('lgMsg').innerHTML='<div class="err">'+esc(trErr(error.message))+'</div>';return}
+}
+async function doSignup(){
+ const email=$('lgEmail').value.trim(),pass=$('lgPass').value;
+ if(!email||!pass){$('lgMsg').innerHTML='<div class="err">E-posta ve şifre gerekli.</div>';return}
+ if(pass.length<6){$('lgMsg').innerHTML='<div class="err">Şifre en az 6 karakter olmalı.</div>';return}
+ $('lgBtn').disabled=true;$('lgMsg').innerHTML='';
+ const {data,error}=await sb.auth.signUp({email,password:pass});
+ $('lgBtn').disabled=false;
+ if(error){$('lgMsg').innerHTML='<div class="err">'+esc(trErr(error.message))+'</div>';return}
+ if(data.session){return} // otomatik giriş yapıldı
+ $('lgMsg').innerHTML='<div class="ok">Kayıt oluşturuldu. E-postana gelen onay bağlantısına tıkladıktan sonra giriş yapabilirsin.</div>';
+}
+async function doLogout(){ await sb.auth.signOut(); }
+
+sb.auth.onAuthStateChange((event,session)=>{
+ if(session){ showApp(session); } else { showLogin(); }
+});
+
+function showLogin(){
+ $('loginScreen').classList.remove('hide');
+ $('app').classList.add('hide');
+ teardownRealtime();
+}
+function showApp(session){
+ $('loginScreen').classList.add('hide');
+ $('app').classList.remove('hide');
+ $('whoami').textContent=session.user.email||'';
+ if(currentUid!==session.user.id){ currentUid=session.user.id; initData(); }
+}
+
+/* ---------- HESAPLAYICI (tab 1, sadece hızlı hesap, kayıt tutmaz) ---------- */
+const calcIds=['pk','km','ip','ik','kp','kk','gun'];
+for(let i=1;i<=30;i++){const o=document.createElement('option');o.value=i;o.textContent=i+' gün';$('gun').appendChild(o)}
+$('gun').value=26;
+function calc(){
+ const v=i=>parseFloat($(i).value)||0, d=v('gun'), p=v('pay');
+ const gelir=v('pk')*v('ip')+v('km')*v('ik');
+ const fat=gelir*1.2;
+ const kurye=v('pk')*v('kp')+v('km')*v('kk');
+ const cost=kurye/1.2;
+ const brut=gelir-cost;
+ const taban=$('base').value==='b'?Math.max(brut,0):gelir;
+ const pay=taban*p/100, bayi=brut-pay;
+ const set=(id,x)=>{$(id).textContent=f(x);$(id+'n').textContent=f(x*d)};
+ set('a1',gelir);set('a3',fat);set('b1',kurye);set('c1',cost);set('k1',brut);set('p1',pay);
+ $('z').textContent=f(bayi);$('zn').textContent=f(bayi*d);
+ $('m1').textContent=$('m1n').textContent=pc(gelir?brut/gelir*100:0);
+ $('m2').textContent=$('m2n').textContent=pc(gelir?bayi/gelir*100:0);
+ $('pl').textContent='Vigo payı (%'+p+', '+($('base').value==='b'?'brüt kâr':'hasılat')+' üzerinden)';
+ if(document.getElementById('t2').style.display!=='none') renderRes();
+}
+calcIds.forEach(i=>{$(i).addEventListener('input',calc);$(i).addEventListener('change',calc)});
+$('pay').addEventListener('change',saveSettings);
+$('base').addEventListener('change',saveSettings);
+
+function showTab(n){$('t1').style.display=n==1?'':'none';$('t2').style.display=n==2?'':'none';$('tb1').classList.toggle('on',n==1);$('tb2').classList.toggle('on',n==2);if(n==2)renderRes()}
+
+/* ---------- SUPABASE VERİ KATMANI ---------- */
+let currentUid=null;
+let S={biz:[],entries:[]};
+let channels=[];
+const writeQ=new Map();
+function queueWrite(key,fn){
+ const prev=writeQ.get(key)||Promise.resolve();
+ const next=prev.then(fn).catch(e=>console.error('yazma hatası',e));
+ writeQ.set(key,next);
+ return next;
+}
+const timers=new Map();
+function debounced(key,fn,ms){ clearTimeout(timers.get(key)); timers.set(key,setTimeout(fn,ms)); }
+
+function teardownRealtime(){ channels.forEach(c=>sb.removeChannel(c)); channels=[]; }
+
+async function initData(){
+ $('dt').value=td();
+ $('dbStat').textContent='Yükleniyor…';$('dbStat').classList.remove('err','ok');
+ try{
+  const [{data:biz,error:e1},{data:entries,error:e2},{data:settings,error:e3}]=await Promise.all([
+   sb.from('businesses').select('*').order('created_at'),
+   sb.from('entries').select('*').order('entry_date',{ascending:false}).limit(2000),
+   sb.from('settings').select('*').maybeSingle()
+  ]);
+  if(e1) throw e1; if(e2) throw e2; if(e3) throw e3;
+  S.biz=biz||[]; S.entries=entries||[];
+  if(settings){ $('pay').value=settings.pay; $('base').value=settings.base; }
+  else{ await sb.from('settings').insert({pay:5,base:'h'}); }
+  calc();
+  renderBiz();renderDay();renderRes();
+  $('dbStat').textContent='Bağlandı — veriler Supabase\'te kayıtlı, tüm cihazlarda senkron.';
+  $('dbStat').classList.add('ok');
+  setupRealtime();
+ }catch(e){
+  console.error(e);
+  $('dbStat').textContent='Veri okunamadı: '+(e.message||e);
+  $('dbStat').classList.add('err');
+ }
+}
+
+function setupRealtime(){
+ teardownRealtime();
+ const uid=currentUid;
+ const ch1=sb.channel('biz-'+uid).on('postgres_changes',{event:'*',schema:'public',table:'businesses',filter:'user_id=eq.'+uid},payload=>{
+  if(payload.eventType==='DELETE'){ S.biz=S.biz.filter(b=>b.id!==payload.old.id); }
+  else{ const i=S.biz.findIndex(b=>b.id===payload.new.id); if(i>=0) S.biz[i]=payload.new; else S.biz.push(payload.new); }
+  renderBiz();renderDay();renderRes();
+ }).subscribe();
+ const ch2=sb.channel('entries-'+uid).on('postgres_changes',{event:'*',schema:'public',table:'entries',filter:'user_id=eq.'+uid},payload=>{
+  if(payload.eventType==='DELETE'){ S.entries=S.entries.filter(e=>e.id!==payload.old.id); }
+  else{ const i=S.entries.findIndex(e=>e.id===payload.new.id); if(i>=0) S.entries[i]=payload.new; else S.entries.push(payload.new); }
+  renderDay();renderRes();
+ }).subscribe();
+ const ch3=sb.channel('settings-'+uid).on('postgres_changes',{event:'*',schema:'public',table:'settings',filter:'user_id=eq.'+uid},payload=>{
+  if(payload.new){ $('pay').value=payload.new.pay; $('base').value=payload.new.base; calc(); }
+ }).subscribe();
+ channels=[ch1,ch2,ch3];
+}
+
+function addBiz(){
+ sb.from('businesses').insert({name:'',ip:0,ik:0,kp:0,kk:0}).select().single().then(({data,error})=>{
+  if(error){alert('İşletme eklenemedi: '+error.message);return}
+  S.biz.push(data); renderBiz();
+ });
+}
+function renderBiz(){
+ if($('bz').contains(document.activeElement)) return;
+ $('bz').innerHTML=S.biz.length?S.biz.map(b=>`<div class="bz" data-id="${b.id}"><div class="bh"><input data-f="name" placeholder="İşletme adı" value="${esc(b.name||'')}"><button class="btn d" data-del="1">Sil</button></div>
+ <div class="g4"><label>İşletme paket ₺ (KDV hariç)<input data-f="ip" type="number" inputmode="decimal" step="0.01" value="${esc(b.ip)}"></label>
+ <label>İşletme km ₺ (KDV hariç)<input data-f="ik" type="number" inputmode="decimal" step="0.01" value="${esc(b.ik)}"></label>
+ <label>Kurye paket ₺ (KDV dahil)<input data-f="kp" type="number" inputmode="decimal" step="0.01" value="${esc(b.kp)}"></label>
+ <label>Kurye km ₺ (KDV dahil)<input data-f="kk" type="number" inputmode="decimal" step="0.01" value="${esc(b.kk)}"></label></div></div>`).join(''):'<div class="n" style="margin:0 0 10px">Henüz işletme yok. Aşağıdan ekle.</div>';
+}
+function entryOf(date,bizId){return S.entries.find(e=>e.entry_date===date&&e.business_id===bizId)}
+function renderDay(){
+ if($('dl').contains(document.activeElement)) return;
+ const dt=$('dt').value;
+ $('dl').innerHTML=S.biz.length?S.biz.map(b=>{const e=entryOf(dt,b.id)||{};return `<div class="dr" data-id="${b.id}"><b>${esc(b.name||'(adsız)')}</b><label>Paket<input data-f="pk" type="number" inputmode="decimal" min="0" value="${e.pk!=null?esc(e.pk):''}"></label><label>Fazla km<input data-f="km" type="number" inputmode="decimal" min="0" value="${e.km!=null?esc(e.km):''}"></label></div>`}).join(''):'<div class="n" style="margin:0">Önce işletme ekle.</div>';
+}
+function computeReport(){
+ const dt=$('dt').value,rg=$('rg').value,p=n2($('pay').value),base=$('base').value;
+ const inPeriod=k=>rg=='a'||(rg=='d'?k==dt:k.slice(0,7)==dt.slice(0,7));
+ const T={pk:0,km:0,g:0,k:0,c:0,b:0,v:0,z:0};
+ const rows=S.biz.map(b=>{
+  let pk=0,km=0;
+  S.entries.filter(e=>e.business_id===b.id&&inPeriod(e.entry_date)).forEach(e=>{pk+=n2(e.pk);km+=n2(e.km)});
+  const g=pk*n2(b.ip)+km*n2(b.ik),k=pk*n2(b.kp)+km*n2(b.kk),c=k/1.2,br=g-c;
+  const v=(base=='b'?Math.max(br,0):g)*p/100,z=br-v;
+  T.pk+=pk;T.km+=km;T.g+=g;T.k+=k;T.c+=c;T.b+=br;T.v+=v;T.z+=z;
+  return{name:b.name||'(adsız)',pk,km,g,k,c,br,v,z};
+ });
+ return{rows,T,p,base,dt,rg};
+}
+function renderRes(){
+ const {rows,T,p,base}=computeReport();
+ let out=rows.map(r=>`<tr><td>${esc(r.name)}</td><td>${r.pk}</td><td>${r.km}</td><td>${f(r.g)}</td><td>${f(r.br)}</td><td>${f(r.v)}</td><td>${f(r.z)}</td></tr>`).join('');
+ out+=`<tr class="tt"><td>Toplam</td><td>${T.pk}</td><td>${T.km}</td><td>${f(T.g)}</td><td>${f(T.b)}</td><td>${f(T.v)}</td><td style="color:var(--gr)">${f(T.z)}</td></tr>`;
+ $('rs').innerHTML=out;
+ const R=(a,b,st)=>`<div class="r" style="grid-template-columns:2fr 1fr;${st||''}"><span>${a}</span><span>${b}</span></div>`;
+ $('sm').innerHTML=R('İşletmelere kesilecek fatura (KDV dahil)',f(T.g*1.2))+R('Hasılat (KDV hariç)',f(T.g))+R('Kuryeye ödenecek (KDV dahil)',f(T.k))+R('Cost / Maliyet (KDV hariç)',f(T.c))+R('Brüt kâr',f(T.b),'font-weight:700')+R('Brüt kâr %',pc(T.g?T.b/T.g*100:0))+R('Vigo payı (%'+p+', '+(base=='b'?'brüt kâr':'hasılat')+')',f(T.v))+R('Bayi (sana kalan)',f(T.z),'font-weight:700;color:var(--gr)');
+}
+
+$('bz').addEventListener('input',e=>{
+ const t=e.target,w=t.closest('.bz');if(!w||!t.dataset.f)return;
+ const id=w.dataset.id, b=S.biz.find(x=>x.id===id); if(!b) return;
+ b[t.dataset.f]=t.value; renderRes();
+ if(!$('dl').contains(document.activeElement)) renderDay();
+ debounced('biz:'+id,()=>{
+  queueWrite('biz:'+id,()=>sb.from('businesses').update({name:b.name||'',ip:n2(b.ip),ik:n2(b.ik),kp:n2(b.kp),kk:n2(b.kk)}).eq('id',id));
+ },600);
+});
+$('bz').addEventListener('click',e=>{
+ const t=e.target;if(!t.dataset.del)return;
+ if(t.dataset.armed){
+  const id=t.closest('.bz').dataset.id;
+  sb.from('businesses').delete().eq('id',id).then(({error})=>{ if(error) alert('Silinemedi: '+error.message); else { S.biz=S.biz.filter(b=>b.id!==id); S.entries=S.entries.filter(e=>e.business_id!==id); renderBiz();renderDay();renderRes(); } });
+  return;
+ }
+ t.dataset.armed='1';t.textContent='Emin misin? Sil';
+ setTimeout(()=>{if(t.isConnected){delete t.dataset.armed;t.textContent='Sil'}},3000);
+});
+$('dl').addEventListener('input',e=>{
+ const t=e.target,w=t.closest('.dr');if(!w||!t.dataset.f)return;
+ const bizId=w.dataset.id, date=$('dt').value;
+ let e2=entryOf(date,bizId);
+ if(!e2){e2={entry_date:date,business_id:bizId,pk:'',km:''};S.entries.push(e2)}
+ e2[t.dataset.f]=t.value;
+ renderRes();
+ debounced('entry:'+date+':'+bizId,()=>{
+  queueWrite('entry:'+date+':'+bizId,()=>sb.from('entries').upsert({business_id:bizId,entry_date:date,pk:n2(e2.pk),km:n2(e2.km)},{onConflict:'user_id,business_id,entry_date'}));
+ },600);
+});
+$('dt').addEventListener('change',()=>{renderDay();renderRes()});
+$('rg').addEventListener('change',renderRes);
+
+function saveSettings(){
+ queueWrite('settings',()=>sb.from('settings').upsert({pay:n2($('pay').value),base:$('base').value},{onConflict:'user_id'}));
+}
+
+/* ---------- EXCEL İNDİRME ---------- */
+let downloadsNs=null;
+(async()=>{
+ try{
+  if(window.claude&&window.claude.use){ downloadsNs=await window.claude.use('downloads'); }
+ }catch(e){}
+})();
+async function downloadBlob(filename,blob){
+ if(downloadsNs){
+  try{ await downloadsNs.save({filename,data:blob}); return }
+  catch(e){ if(e&&e.code==='declined') return; console.error('indirme',e); alert('İndirme başarısız oldu: '+(e&&e.message?e.message:'bilinmeyen hata')); return }
+ }
+ const url=URL.createObjectURL(blob);
+ const a=document.createElement('a'); a.href=url; a.download=filename;
+ document.body.appendChild(a); a.click(); a.remove();
+ setTimeout(()=>URL.revokeObjectURL(url),2000);
+}
+async function exportExcel(){
+ if(typeof XLSX==='undefined'){alert('Excel kütüphanesi yüklenemedi, internet bağlantını kontrol et.');return}
+ const {rows,T,p,base,dt,rg}=computeReport();
+ const ozet=[['İşletme','Paket','Km','Hasılat (KDV hariç)','Fatura (KDV dahil)','Kurye Ödemesi (KDV dahil)','Maliyet (KDV hariç)','Brüt Kâr','Brüt Kâr %','Vigo Payı','Bayi (Kalan)']];
+ rows.forEach(r=>ozet.push([r.name,r.pk,r.km,r.g,r.g*1.2,r.k,r.c,r.br,r.g?r.br/r.g*100:0,r.v,r.z]));
+ ozet.push(['TOPLAM',T.pk,T.km,T.g,T.g*1.2,T.k,T.c,T.b,T.g?T.b/T.g*100:0,T.v,T.z]);
+ const inPeriod=k=>rg=='a'||(rg=='d'?k==dt:k.slice(0,7)==dt.slice(0,7));
+ const gunluk=[['Tarih','İşletme','Paket','Km','Hasılat','Brüt Kâr','Vigo Payı','Bayi']];
+ S.entries.filter(e=>inPeriod(e.entry_date)).sort((a,b)=>a.entry_date<b.entry_date?-1:1).forEach(e=>{
+  const b=S.biz.find(x=>x.id===e.business_id); if(!b) return;
+  const pk=n2(e.pk),km=n2(e.km),g=pk*n2(b.ip)+km*n2(b.ik),k=pk*n2(b.kp)+km*n2(b.kk),c=k/1.2,br=g-c;
+  const v=(base=='b'?Math.max(br,0):g)*p/100,z=br-v;
+  gunluk.push([e.entry_date,b.name||'(adsız)',pk,km,g,br,v,z]);
+ });
+ const wb=XLSX.utils.book_new();
+ XLSX.utils.book_append_sheet(wb,XLSX.utils.aoa_to_sheet(ozet),'Özet');
+ XLSX.utils.book_append_sheet(wb,XLSX.utils.aoa_to_sheet(gunluk),'Günlük Kayıtlar');
+ const buf=XLSX.write(wb,{type:'array',bookType:'xlsx'});
+ const per=rg=='a'?'tum-kayitlar':(rg=='m'?dt.slice(0,7):dt);
+ await downloadBlob(`bayilik-${per}.xlsx`,new Blob([buf],{type:'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'}));
+}
+
+/* ---------- BAŞLANGIÇ ---------- */
+sb.auth.getSession().then(({data})=>{
+ if(data.session){ showApp(data.session); } else { showLogin(); }
+});
+</script>
+</body></html>
